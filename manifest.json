@@ -1,7 +1,7 @@
 {
   "name": "Edison",
   "short_name": "Edison",
-  "description": "Log lightbulb moments and send approved ones to a coding agent.",
+  "description": "Log tickets and send approved ones to a coding agent.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

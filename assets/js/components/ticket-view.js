@@ -5,7 +5,7 @@ var EdisonTicket = (function () {
 
   function mount(el, repo, number) {
     var token = ++generation;
-    el.innerHTML = '<p class="muted">Opening the moment…</p>';
+    el.innerHTML = '<p class="muted">Opening the ticket…</p>';
     return Promise.all([
       EdisonApi.issue(repo, number),
       EdisonApi.comments(repo, number),
@@ -43,9 +43,10 @@ var EdisonTicket = (function () {
     var type = EdisonLabels.typeOf(issue.labels);
     var priority = EdisonLabels.priorityOf(issue.labels) || 'p2';
     var html = '<article class="ticket">';
-    html += '<p class="meta"><a href="index.html?repo=' + encodeURIComponent(repo) + '&n=' + issue.number + '">Moments</a></p>';
+    html += '<p class="meta"><a href="index.html?repo=' + encodeURIComponent(repo) + '&n=' + issue.number + '">Tickets</a></p>';
     html += '<h1>' + EdisonFormat.bulb(stage) + ' ' + EdisonFormat.escapeHtml(issue.title) + '</h1>';
-    html += '<p class="meta">' + EdisonFormat.escapeHtml(appLabel) + ' · ' + EdisonFormat.escapeHtml(EdisonLabels.STAGE_LABEL[stage] || stage);
+    html += '<p class="status-line"><span class="status-badge lg stage-' + EdisonFormat.escapeHtml(stage) + '">' + EdisonFormat.escapeHtml(EdisonLabels.STAGE_LABEL[stage] || stage) + '</span></p>';
+    html += '<p class="meta">' + EdisonFormat.escapeHtml(appLabel);
     html += ' · <a href="' + EdisonFormat.escapeHtml(issue.html_url) + '" target="_blank" rel="noopener noreferrer">#' + issue.number + ' on GitHub</a></p>';
     if (app && app.pagesUrl) {
       html += '<p class="meta"><a href="' + EdisonFormat.escapeHtml(app.pagesUrl) + '" target="_blank" rel="noopener noreferrer">Live site</a></p>';

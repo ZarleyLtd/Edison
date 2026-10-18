@@ -5,7 +5,7 @@ Edison is a phone-first tracker for bugs, changes, features, and new-app ideas. 
 ## Decisions
 
 - Static HTML, CSS, and JavaScript. No build step. GitHub Pages from `main`.
-- One issue per moment, in the target app's repository. New-app ideas live in this repository with the `app:new` label until Create repo.
+- One issue per ticket, in the target app's repository. New-app ideas live in this repository with the `app:new` label until Create repo.
 - Labels carry type, stage, and priority. Closing the issue means done.
 - Photos are compressed in the browser and committed under `attachments/` in this repository.
 - The agent is selected in Settings (`agents.json`): `@cursor` now, `@claude` when you copy `templates/claude.yml` into an app.

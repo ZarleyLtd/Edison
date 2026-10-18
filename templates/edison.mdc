@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Edison tickets
 
-Issues labeled `edison` were filed in Edison, the lightbulb-moment tracker.
+Issues labeled `edison` were filed in Edison, the ticket tracker.
 
 When a comment asks you to implement the issue:
 

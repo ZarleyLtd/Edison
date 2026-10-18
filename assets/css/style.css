@@ -159,13 +159,40 @@ button:disabled { opacity: 0.55; cursor: default; }
 
 .bulb-icon { display: inline-flex; color: var(--amber); flex: none; }
 .bulb-svg { width: 1.7rem; height: 1.7rem; }
-.stage-inbox { opacity: 0.35; }
-.stage-ready { opacity: 0.62; }
-.stage-working { opacity: 0.9; animation: glow 1.6s ease-in-out infinite; }
-.stage-needs-input { opacity: 0.8; color: #6d4ad4; }
-.stage-review { opacity: 1; filter: drop-shadow(0 0 6px #f0b429); }
-.stage-parked { opacity: 0.3; filter: grayscale(1); }
-.stage-done { opacity: 1; color: var(--ok); filter: drop-shadow(0 0 8px #f0b429); }
+.bulb-icon.stage-inbox { opacity: 0.35; }
+.bulb-icon.stage-ready { opacity: 0.62; }
+.bulb-icon.stage-working { opacity: 0.9; animation: glow 1.6s ease-in-out infinite; }
+.bulb-icon.stage-needs-input { opacity: 0.8; color: #6d4ad4; }
+.bulb-icon.stage-review { opacity: 1; filter: drop-shadow(0 0 6px #f0b429); }
+.bulb-icon.stage-parked { opacity: 0.3; filter: grayscale(1); }
+.bulb-icon.stage-done { opacity: 1; color: var(--ok); filter: drop-shadow(0 0 8px #f0b429); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  background: #fff1cc;
+  color: #6b4704;
+}
+.status-badge.lg { font-size: 1.05rem; padding: 0.4rem 0.85rem; }
+.status-badge.stage-done { background: #e5f4ea; color: var(--ok); }
+.status-badge.stage-needs-input { background: #efe8ff; color: #6d4ad4; }
+.status-badge.stage-parked { background: #eeeae4; color: var(--muted); }
+.status-line { margin: 0.35rem 0 0.5rem; }
+.card-main { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 0.35rem; min-width: 0; }
+.card-main h2 { margin: 0; }
+
+button.toggle[aria-pressed="true"] {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #1a140c;
+  font-weight: 700;
+}
 
 @keyframes glow {
   50% { filter: drop-shadow(0 0 8px #f0b429); }
@@ -256,5 +283,5 @@ button:disabled { opacity: 0.55; cursor: default; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage-working { animation: none; }
+  .bulb-icon.stage-working { animation: none; }
 }

@@ -1,6 +1,6 @@
 # Edison
 
-A phone-first list of lightbulb moments. Each moment is a GitHub issue on one of the ZarleyLtd apps. When you tap Switch on, a coding agent picks it up and opens a pull request. You review and merge. The live site changes only after that.
+A phone-first list of tickets. Each ticket is a GitHub issue on one of the ZarleyLtd apps. When you tap Switch on, a coding agent picks it up and opens a pull request. You review and merge. The live site changes only after that.
 
 Live site: https://zarleyltd.github.io/Edison/
 
@@ -18,9 +18,9 @@ Same shape as the other CursorSites apps:
 1. Open Settings and save a GitHub personal access token. A classic token with the `repo` scope covers issues, files, pull requests, and creating a repository. The token stays in this browser.
 2. Connect the Cursor GitHub app so `@cursor` comments start a cloud agent. Steps are in [docs/SETUP_CURSOR.md](docs/SETUP_CURSOR.md).
 3. In Settings, set up labels on the app you want to use. HelloWorldCursor is a good first target.
-4. File a moment, mark it ready, and tap Switch on.
+4. File a ticket, mark it ready, and tap Switch on.
 
-On a wide screen the list and the open moment sit side by side. On a phone the moment opens on its own page. Press `n` for a new moment, `/` to search, and Escape to close the sheet.
+On a wide screen the list and the open ticket sit side by side. On a phone the ticket opens on its own page. Press `n` for a new ticket, `/` to search, and Escape to close the sheet.
 
 ## New apps
 
@@ -44,7 +44,7 @@ Open `http://127.0.0.1:4173/index.html`.
 
 ## Notes
 
-Photos attached to a moment are committed to this public repository. Do not attach anything private.
+Photos attached to a ticket are committed to this public repository. Do not attach anything private.
 
 `GolfScoreChecker` is a private repository listed in `apps.json` so it can appear in the app menu. The GitHub token needs access to it.
 

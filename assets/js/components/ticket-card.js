@@ -13,13 +13,14 @@ var EdisonCard = (function () {
     var bits = [repoName || EdisonFormat.repoFromUrl(issue.repository_url), type];
     if (EdisonLabels.isNewApp(labels)) bits[0] = 'New app';
     if (priority) bits.push(priority);
-    bits.push(EdisonLabels.STAGE_LABEL[stage] || stage);
     bits.push(EdisonFormat.timeAgo(issue.updated_at));
     var repo = EdisonFormat.repoFromUrl(issue.repository_url);
+    var status = EdisonLabels.STAGE_LABEL[stage] || stage;
     return (
       '<a class="card" data-repo="' + EdisonFormat.escapeHtml(repo) + '" data-number="' + issue.number + '" href="' + href(repo, issue.number) + '">' +
       EdisonFormat.bulb(stage) +
-      '<span><h2>' + EdisonFormat.escapeHtml(issue.title) + '</h2>' +
+      '<span class="card-main"><span class="status-badge stage-' + EdisonFormat.escapeHtml(stage) + '">' + EdisonFormat.escapeHtml(status) + '</span>' +
+      '<h2>' + EdisonFormat.escapeHtml(issue.title) + '</h2>' +
       '<p class="meta">' + EdisonFormat.escapeHtml(bits.filter(Boolean).join(' · ')) + '</p></span></a>'
     );
   }

@@ -7,7 +7,7 @@ var EdisonTicketPage = (function () {
     var number = params.get('n');
     var root = document.getElementById('ticket');
     if (!EdisonAuth.getToken()) {
-      root.innerHTML = '<p class="muted">Add a GitHub token in Settings to open this moment.</p>';
+      root.innerHTML = '<p class="muted">Add a GitHub token in Settings to open this ticket.</p>';
       return;
     }
     if (!repo || !number) {

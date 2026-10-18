@@ -9,9 +9,38 @@ var EdisonList = (function () {
       type: document.getElementById('filter-type').value,
       stage: document.getElementById('filter-stage').value,
       priority: document.getElementById('filter-priority').value,
-      state: document.getElementById('filter-state').value,
+      state: stateFilter(),
       text: document.getElementById('filter-text').value
     };
+  }
+
+  function stateFilter() {
+    var openOn = document.getElementById('filter-open').getAttribute('aria-pressed') === 'true';
+    var doneOn = document.getElementById('filter-done').getAttribute('aria-pressed') === 'true';
+    if (openOn) return 'open';
+    if (doneOn) return 'closed';
+    return 'all';
+  }
+
+  function bindStateToggles() {
+    var openBtn = document.getElementById('filter-open');
+    var doneBtn = document.getElementById('filter-done');
+    function press(which) {
+      var openOn = openBtn.getAttribute('aria-pressed') === 'true';
+      var doneOn = doneBtn.getAttribute('aria-pressed') === 'true';
+      if (which === 'open') {
+        openOn = !openOn;
+        if (openOn) doneOn = false;
+      } else {
+        doneOn = !doneOn;
+        if (doneOn) openOn = false;
+      }
+      openBtn.setAttribute('aria-pressed', openOn ? 'true' : 'false');
+      doneBtn.setAttribute('aria-pressed', doneOn ? 'true' : 'false');
+      load();
+    }
+    openBtn.addEventListener('click', function () { press('open'); });
+    doneBtn.addEventListener('click', function () { press('done'); });
   }
 
   function isWide() {
@@ -42,6 +71,7 @@ var EdisonList = (function () {
           event.preventDefault();
           load();
         });
+        bindStateToggles();
         load();
         openFromQuery();
       }
@@ -87,7 +117,7 @@ var EdisonList = (function () {
   }
 
   function emptySignedOut() {
-    return '<div class="empty">' + EdisonFormat.bulb('ready') + '<h2>No lightbulb moments yet</h2><p class="muted">Add a GitHub token in Settings to see and file them.</p></div>';
+    return '<div class="empty">' + EdisonFormat.bulb('ready') + '<h2>No tickets yet</h2><p class="muted">Add a GitHub token in Settings to see and file them.</p></div>';
   }
 
   function load() {
@@ -105,11 +135,11 @@ var EdisonList = (function () {
       state: chosen.state,
       text: chosen.text
     });
-    document.getElementById('list').innerHTML = '<p class="muted">Looking for moments…</p>';
+    document.getElementById('list').innerHTML = '<p class="muted">Looking for tickets…</p>';
     EdisonApi.searchIssues(query).then(function (result) {
       var items = result.items || [];
       if (!items.length) {
-        document.getElementById('list').innerHTML = '<div class="empty">' + EdisonFormat.bulb('inbox') + '<h2>No lightbulb moments yet</h2><p class="muted">File one with New moment.</p></div>';
+        document.getElementById('list').innerHTML = '<div class="empty">' + EdisonFormat.bulb('inbox') + '<h2>No tickets yet</h2><p class="muted">File one with New ticket.</p></div>';
         return;
       }
       document.getElementById('list').innerHTML = '<div class="cards">' + items.map(function (issue) {
@@ -199,13 +229,13 @@ var EdisonList = (function () {
         return issue;
       });
     }).then(function (issue) {
-      BriefMessage.show('Moment filed', button);
+      BriefMessage.show('Ticket filed', button);
       form.reset();
       urls = [];
       renderUrls();
       closeSheet();
       button.disabled = false;
-      button.textContent = 'File moment';
+      button.textContent = 'File ticket';
       load();
       if (isWide()) {
         history.pushState({}, '', 'index.html?repo=' + encodeURIComponent(repo) + '&n=' + issue.number);
@@ -213,7 +243,7 @@ var EdisonList = (function () {
       }
     }).catch(function (error) {
       button.disabled = false;
-      button.textContent = 'File moment';
+      button.textContent = 'File ticket';
       BriefMessage.show(error.message, button, { durationMs: 3000, multiline: true });
     });
   }
