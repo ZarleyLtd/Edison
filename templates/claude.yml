@@ -1,0 +1,34 @@
+# Edison starts Claude by commenting @claude on an issue.
+# The edison label is applied when a ticket is first filed, so this
+# workflow does not trigger on that label (it would start work before
+# you tap Switch on). Copy this file to .github/workflows/claude.yml
+# in an app, and set the CLAUDE_CODE_OAUTH_TOKEN secret, before
+# switching Edison to Claude.
+name: Claude Code
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  claude:
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          trigger_phrase: "@claude"
+          prompt: |
+            Read this Edison issue, including comments and linked attachments.
+            Implement the change on a new branch. Open a pull request that
+            references the issue. Do not merge. Comment a short summary of
+            what changed and how to review it. If you are blocked, comment
+            the question and add the label stage:needs-input.

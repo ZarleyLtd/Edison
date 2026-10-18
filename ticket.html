@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#e39b12" />
+  <meta name="description" content="An Edison lightbulb moment." />
+  <title>Moment · Edison</title>
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/brief-message.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; connect-src 'self' https://api.github.com; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'" />
+</head>
+<body data-page="ticket">
+  <header class="top">
+    <a class="brand" href="index.html">
+      <svg class="brand-bulb" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3a8 8 0 0 0-4.6 14.5c.4.4.6.9.6 1.4V21a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.1c0-.5.2-1 .6-1.4A8 8 0 0 0 16 3zm-2.2 20.2h4.4V25a2.2 2.2 0 0 1-4.4 0v-1.8z"/></svg>
+      <span>Edison</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="index.html">Moments</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+  </header>
+  <main class="layout" id="ticket"></main>
+  <script src="assets/js/config/app-config.js"></script>
+  <script src="assets/js/utils/auth.js"></script>
+  <script src="assets/js/utils/labels.js"></script>
+  <script src="assets/js/utils/query.js"></script>
+  <script src="assets/js/utils/formatters.js"></script>
+  <script src="assets/js/utils/api.js"></script>
+  <script src="assets/js/utils/image-compress.js"></script>
+  <script src="assets/js/utils/brief-message.js"></script>
+  <script src="assets/js/utils/apps.js"></script>
+  <script src="assets/js/utils/agents.js"></script>
+  <script src="assets/js/utils/setup.js"></script>
+  <script src="assets/js/components/ticket-card.js"></script>
+  <script src="assets/js/components/ticket-view.js"></script>
+  <script src="assets/js/pages/ticket.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

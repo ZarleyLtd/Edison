@@ -1,0 +1,16 @@
+---
+description: How a Cursor agent should handle an Edison ticket
+alwaysApply: true
+---
+
+# Edison tickets
+
+Issues labeled `edison` were filed in Edison, the lightbulb-moment tracker.
+
+When a comment asks you to implement the issue:
+
+- Read the issue body, comments, and linked screenshots.
+- Make the change on a new branch.
+- Open a pull request that references the issue number. Do not merge.
+- Comment a short summary of what changed and how to review it.
+- If you are blocked, comment the question and replace the `stage:working` label with `stage:needs-input`.

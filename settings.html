@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#e39b12" />
+  <meta name="description" content="Edison settings." />
+  <title>Settings · Edison</title>
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/brief-message.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; connect-src 'self' https://api.github.com; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'" />
+</head>
+<body data-page="settings">
+  <header class="top">
+    <a class="brand" href="index.html">
+      <svg class="brand-bulb" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3a8 8 0 0 0-4.6 14.5c.4.4.6.9.6 1.4V21a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.1c0-.5.2-1 .6-1.4A8 8 0 0 0 16 3zm-2.2 20.2h4.4V25a2.2 2.2 0 0 1-4.4 0v-1.8z"/></svg>
+      <span>Edison</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="index.html">Moments</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+  </header>
+  <main class="layout ticket stack">
+    <h1>Settings</h1>
+    <p id="who" class="muted">No token on this device yet.</p>
+    <section class="stack">
+      <h2>GitHub token</h2>
+      <p class="hint">The token stays in this browser only. A classic token with the <strong>repo</strong> scope is the simplest. A fine-grained token needs read and write on Issues, Contents, and Pull requests, and Administration if you use Create repo. Include every ZarleyLtd app, including private ones you want in the list.</p>
+      <p><a href="https://github.com/settings/tokens/new?scopes=repo&amp;description=Edison" target="_blank" rel="noopener noreferrer">Create a classic token</a></p>
+      <label class="field">Personal access token<input id="token" type="password" autocomplete="off" /></label>
+      <div class="row">
+        <button type="button" class="primary" id="save-token">Save token</button>
+        <button type="button" id="clear-token">Remove token</button>
+      </div>
+    </section>
+    <section class="stack">
+      <h2>Agent</h2>
+      <p class="hint">Switch on posts this vendor’s mention on the GitHub issue. Cursor is ready once the Cursor GitHub app can see the repository. Claude also needs <code>templates/claude.yml</code> copied into that app. See <a href="docs/SETUP_CURSOR.md">the Cursor setup notes</a>.</p>
+      <label class="field">Vendor
+        <select id="vendor"></select>
+      </label>
+      <button type="button" class="primary" id="save-vendor">Save agent</button>
+      <p id="vendor-status" class="hint"></p>
+    </section>
+    <section class="stack">
+      <h2>Repositories</h2>
+      <p class="hint">Labels let Edison file tickets. A rules pull request adds the note Cursor agents read.</p>
+      <button type="button" id="setup-all">Set up labels on every app</button>
+      <p id="setup-status" class="hint"></p>
+      <div id="repos"></div>
+    </section>
+  </main>
+  <script src="assets/js/config/app-config.js"></script>
+  <script src="assets/js/utils/auth.js"></script>
+  <script src="assets/js/utils/labels.js"></script>
+  <script src="assets/js/utils/query.js"></script>
+  <script src="assets/js/utils/formatters.js"></script>
+  <script src="assets/js/utils/api.js"></script>
+  <script src="assets/js/utils/image-compress.js"></script>
+  <script src="assets/js/utils/brief-message.js"></script>
+  <script src="assets/js/utils/apps.js"></script>
+  <script src="assets/js/utils/agents.js"></script>
+  <script src="assets/js/utils/setup.js"></script>
+  <script src="assets/js/pages/settings.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

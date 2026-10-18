@@ -1,0 +1,26 @@
+# Project: Edison
+
+Phone-first tracker for bugs, changes, features, and new-app ideas. Static site. GitHub Issues are the database. See `docs/PLAN.md`.
+
+## JavaScript
+- Configuration: `assets/js/config/app-config.js` (`EDISON_CONFIG`).
+- Utilities: `assets/js/utils/` (`auth.js`, `api.js`, `labels.js`, `query.js`, `formatters.js`, `apps.js`, `agents.js`, `setup.js`, `image-compress.js`, `brief-message.js`).
+- Components: `assets/js/components/` (`ticket-card.js`, `ticket-view.js`).
+- Pages: `assets/js/pages/` with `init()`. `main.js` routes by `document.body.dataset.page`.
+- Pure helpers in `labels.js`, `query.js`, and `formatters.js` stay free of the DOM so `node --test` can load them.
+
+## HTML
+- Shared header markup lives in `components/header.html` and is pasted into `index.html`, `ticket.html`, and `settings.html`.
+
+## Rules
+1. Relative paths only. Never embed `http://localhost` or a drive letter in page markup. `apps.json` may store local clone paths for display and for the clone command.
+2. Both form factors: usable at 360px (touch) and at 1100px and up (list and detail together, keyboard: `n`, `/`, Escape).
+3. Escape any text that came from GitHub before putting it in `innerHTML`. Issue bodies go through `EdisonFormat.renderMarkdown`.
+4. Photos: `ImageCompress.compressToTarget` to about 100 KB JPEG, then the Contents API. Never upload the original.
+5. Do not merge pull requests from this app. Switch on comments the agent mention and sets `stage:working`.
+6. New-app ideas (`app:new` on the Edison repo) do not show Switch on.
+7. Schema and secrets: there is no Supabase schema. Never commit a GitHub token.
+
+## Brief message
+- Canonical spec: `../cursor-sites-shared/ui/BRIEF_MESSAGE.md`
+- `BriefMessage.show(text, anchorEl, options)` in `assets/js/utils/brief-message.js`

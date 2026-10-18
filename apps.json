@@ -1,0 +1,105 @@
+[
+  {
+    "name": "New app",
+    "repo": null,
+    "pagesUrl": "",
+    "localPath": "",
+    "isNew": true
+  },
+  {
+    "name": "4NextBus",
+    "repo": "4NextBus",
+    "pagesUrl": "https://zarleyltd.github.io/4NextBus/",
+    "localPath": "C:/CursorSites/4NextBus"
+  },
+  {
+    "name": "4NextDart",
+    "repo": "4NextDart",
+    "pagesUrl": "https://zarleyltd.github.io/4NextDart/",
+    "localPath": "C:/CursorSites/4NextDart"
+  },
+  {
+    "name": "4NextLocalTrain",
+    "repo": "4NextLocalTrain",
+    "pagesUrl": "https://zarleyltd.github.io/4NextLocalTrain/",
+    "localPath": "C:/CursorSites/4NextLocalTrain"
+  },
+  {
+    "name": "4NextTram",
+    "repo": "4NextTram",
+    "pagesUrl": "https://zarleyltd.github.io/4NextTram/",
+    "localPath": "C:/CursorSites/4NextTram"
+  },
+  {
+    "name": "BGS",
+    "repo": "BGS",
+    "pagesUrl": "https://zarleyltd.github.io/BGS/",
+    "localPath": "C:/CursorSites/BGS"
+  },
+  {
+    "name": "CrossGunsSnooker",
+    "repo": "CrossGunsSnooker",
+    "pagesUrl": "https://zarleyltd.github.io/CrossGunsSnooker/",
+    "localPath": "C:/CursorSites/PubliiCrossguns"
+  },
+  {
+    "name": "FamilyTree",
+    "repo": "FamilyTree",
+    "pagesUrl": "https://zarleyltd.github.io/FamilyTree/",
+    "localPath": "C:/CursorSites/FamilyTree"
+  },
+  {
+    "name": "GolfScoreChecker",
+    "repo": "GolfScoreChecker",
+    "pagesUrl": "",
+    "localPath": ""
+  },
+  {
+    "name": "helloworld",
+    "repo": "helloworld",
+    "pagesUrl": "https://zarleyltd.github.io/helloworld/",
+    "localPath": ""
+  },
+  {
+    "name": "HelloWorldCursor",
+    "repo": "HelloWorldCursor",
+    "pagesUrl": "https://zarleyltd.github.io/HelloWorldCursor/",
+    "localPath": "C:/CursorSites/HelloWorldCursorSite"
+  },
+  {
+    "name": "ierne-snooker",
+    "repo": "ierne-snooker",
+    "pagesUrl": "https://zarleyltd.github.io/ierne-snooker/",
+    "localPath": "C:/CursorSites/ierne-snooker"
+  },
+  {
+    "name": "RNR",
+    "repo": "RNR",
+    "pagesUrl": "https://zarleyltd.github.io/RNR/",
+    "localPath": "C:/CursorSites/RnR"
+  },
+  {
+    "name": "Scrabble",
+    "repo": "Scrabble",
+    "pagesUrl": "https://zarleyltd.github.io/Scrabble/",
+    "localPath": "C:/CursorSites/Scrabble"
+  },
+  {
+    "name": "Splitify",
+    "repo": "Splitify",
+    "pagesUrl": "https://zarleyltd.github.io/Splitify/",
+    "localPath": "C:/CursorSites/Splitify"
+  },
+  {
+    "name": "theConfessional",
+    "repo": "theConfessional",
+    "pagesUrl": "https://zarleyltd.github.io/theConfessional/",
+    "localPath": "C:/CursorSites/theConfessional"
+  },
+  {
+    "name": "theGolfApp",
+    "repo": "theGolfApp",
+    "pagesUrl": "https://zarleyltd.github.io/theGolfApp/",
+    "localPath": "C:/CursorSites/theGolfApp"
+  }
+]

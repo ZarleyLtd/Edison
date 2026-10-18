@@ -1,0 +1,14 @@
+{
+  "vendor": "cursor",
+  "vendors": {
+    "cursor": {
+      "mention": "@cursor",
+      "label": "Cursor Cloud Agent"
+    },
+    "claude": {
+      "mention": "@claude",
+      "label": "Claude Code"
+    }
+  },
+  "brief": "Read this issue, including comments and linked attachments. Implement the change on a new branch. Open a pull request that references this issue. Do not merge. Comment a short summary of what you changed and how to review it.\n\nIf you are blocked or need a decision, comment the question and add the label stage:needs-input (and remove stage:working)."
+}
