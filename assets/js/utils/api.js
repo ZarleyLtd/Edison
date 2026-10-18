@@ -163,18 +163,32 @@ var EdisonApi = (function () {
     });
   }
 
+  function decodeGitHubContent(content) {
+    if (!content) return '';
+    try {
+      return decodeURIComponent(escape(atob(String(content).replace(/\s/g, ''))));
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function unchangedFile(error) {
+    return error && error.status === 409 && /identical|not changed|no change/i.test(error.message || '');
+  }
+
   function putText(repo, path, message, text, branch) {
-    var lookup = contents(repo, path, branch).then(
-      function (file) {
-        return file.sha;
-      },
-      function (error) {
-        if (error.status === 404) return null;
+    var normalized = String(text).replace(/\r\n/g, '\n');
+    var encoded = EdisonFormat.toBase64Text(normalized);
+    return contents(repo, path, branch).then(function (file) {
+      var existing = decodeGitHubContent(file && file.content).replace(/\r\n/g, '\n');
+      if (existing === normalized) return { unchanged: true };
+      return putContents(repo, path, message, encoded, branch, file && file.sha).catch(function (error) {
+        if (unchangedFile(error)) return { unchanged: true };
         throw error;
-      }
-    );
-    return lookup.then(function (sha) {
-      return putContents(repo, path, message, EdisonFormat.toBase64Text(text), branch, sha);
+      });
+    }, function (error) {
+      if (error.status === 404) return putContents(repo, path, message, encoded, branch, null);
+      throw error;
     });
   }
 

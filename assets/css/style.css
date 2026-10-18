@@ -146,6 +146,12 @@ button:disabled { opacity: 0.55; cursor: default; }
 
 .meta, .muted, .hint { color: var(--muted); }
 
+#vendor-status:not(:empty),
+#setup-status:not(:empty) {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .meta { margin: 0; font-size: 0.85rem; }
 
 .bulb-icon { display: inline-flex; color: var(--amber); flex: none; }

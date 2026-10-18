@@ -53,15 +53,23 @@ var EdisonSettings = (function () {
 
     document.getElementById('save-vendor').addEventListener('click', function () {
       var button = document.getElementById('save-vendor');
+      var status = document.getElementById('vendor-status');
       var id = document.getElementById('vendor').value;
+      if (!id) {
+        status.textContent = 'Choose an agent first.';
+        BriefMessage.show('Choose an agent first', button, { durationMs: 2200 });
+        return;
+      }
       button.disabled = true;
+      status.textContent = 'Saving…';
       EdisonAgents.saveVendor(id).then(function () {
-        document.getElementById('vendor-status').textContent = id === 'claude'
-          ? 'Claude is selected. Copy templates/claude.yml into an app before Switch on will run there.'
-          : 'Cursor Cloud Agent is selected. Switch on comments @cursor.';
-        BriefMessage.show('Agent saved', button);
+        status.textContent = id === 'claude'
+          ? 'Saved. Claude is selected. Copy templates/claude.yml into an app before Switch on will run there.'
+          : 'Saved. Cursor is selected. Switch on comments @cursor.';
+        BriefMessage.show('Agent saved', button, { durationMs: 2200 });
       }).catch(function (error) {
-        document.getElementById('vendor-status').textContent = error.message;
+        status.textContent = error.message;
+        BriefMessage.show(error.message, button, { durationMs: 3500, multiline: true });
       }).then(function () {
         button.disabled = false;
       });

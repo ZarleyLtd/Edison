@@ -40,12 +40,16 @@ var EdisonAgents = (function () {
 
   function saveVendor(id) {
     return load().then(function (config) {
-      if (!config.vendors[id]) throw new Error('Unknown agent.');
+      if (!config.vendors[id]) throw new Error('Choose an agent first.');
       config.vendor = id;
+      cache = config;
+      try {
+        localStorage.setItem(KEY, id);
+      } catch (e) {
+        /* private mode */
+      }
       var text = JSON.stringify(config, null, 2) + '\n';
       return EdisonApi.putText(EDISON_CONFIG.REPO, 'agents.json', 'Switch Edison agent to ' + id, text).then(function () {
-        cache = config;
-        localStorage.setItem(KEY, id);
         return config;
       });
     });
