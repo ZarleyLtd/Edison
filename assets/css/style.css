@@ -147,10 +147,13 @@ button:disabled { opacity: 0.55; cursor: default; }
 .meta, .muted, .hint { color: var(--muted); }
 
 #vendor-status:not(:empty),
-#setup-status:not(:empty) {
+#setup-status:not(:empty),
+#token-status:not(:empty) {
   color: var(--ink);
   font-weight: 600;
 }
+
+#token-status.is-error { color: var(--danger); }
 
 .meta { margin: 0; font-size: 0.85rem; }
 

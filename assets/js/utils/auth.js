@@ -12,7 +12,12 @@ var EdisonAuth = (function () {
   }
 
   function setToken(token) {
-    localStorage.setItem(KEY, String(token || '').trim());
+    try {
+      localStorage.setItem(KEY, String(token || '').trim());
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function clearToken() {

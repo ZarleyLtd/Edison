@@ -3,37 +3,64 @@ var EdisonSettings = (function () {
 
   function init() {
     var input = document.getElementById('token');
+    var typedToken = '';
+    input.addEventListener('input', function () {
+      typedToken = input.value;
+    });
     document.getElementById('save-token').addEventListener('click', function () {
       var button = document.getElementById('save-token');
-      var value = input.value.trim();
+      var value = (input.value || typedToken).trim();
       if (!value) {
-        BriefMessage.show('Paste a token first', button);
+        reportToken('Paste the token into the box, then tap Save token.', true);
         return;
       }
-      EdisonAuth.setToken(value);
-      input.value = '';
+      if (!EdisonAuth.setToken(value)) {
+        reportToken('This browser blocked saving the token. Leave private mode and try again.', true);
+        return;
+      }
       button.disabled = true;
+      reportToken('Checking the token with GitHub…', false);
       EdisonApi.user().then(function (user) {
-        document.getElementById('who').textContent = 'Signed in as ' + user.login;
-        BriefMessage.show('Token saved', button);
+        input.value = '';
+        typedToken = '';
+        reportToken('Signed in as ' + user.login + '.', false);
       }).catch(function (error) {
         EdisonAuth.clearToken();
-        document.getElementById('who').textContent = error.message;
+        reportToken(plainTokenError(error), true);
       }).then(function () {
         button.disabled = false;
       });
     });
     document.getElementById('clear-token').addEventListener('click', function () {
       EdisonAuth.clearToken();
-      document.getElementById('who').textContent = 'Token removed from this device.';
+      typedToken = '';
+      input.value = '';
+      reportToken('Token removed from this browser.', false);
       BriefMessage.show('Token cleared', document.getElementById('clear-token'));
     });
     if (EdisonAuth.getToken()) {
+      reportToken('Checking the saved token…', false);
       EdisonApi.user().then(function (user) {
-        document.getElementById('who').textContent = 'Signed in as ' + user.login;
+        reportToken('Signed in as ' + user.login + '.', false);
       }).catch(function (error) {
-        document.getElementById('who').textContent = error.message;
+        reportToken(plainTokenError(error), true);
       });
+    }
+
+    function reportToken(text, isError) {
+      var status = document.getElementById('token-status');
+      status.textContent = text;
+      status.classList.toggle('is-error', !!isError);
+      document.getElementById('who').textContent = text;
+      status.scrollIntoView({ block: 'nearest' });
+    }
+
+    function plainTokenError(error) {
+      var message = error && error.message ? error.message : 'Could not reach GitHub.';
+      if (/failed to fetch|networkerror|load failed/i.test(message)) {
+        return 'Could not reach GitHub from this browser. Check the connection and tap Save token again.';
+      }
+      return message;
     }
 
     EdisonAgents.load().then(function (config) {
