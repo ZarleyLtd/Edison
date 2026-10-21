@@ -17,8 +17,8 @@ Phone-first tracker for bugs, changes, features, and new-app ideas. Static site.
 2. Both form factors: usable at 360px (touch) and at 1100px and up (list and detail together, keyboard: `n`, `/`, Escape).
 3. Escape any text that came from GitHub before putting it in `innerHTML`. Issue bodies go through `EdisonFormat.renderMarkdown`.
 4. Photos: `ImageCompress.compressToTarget` to about 100 KB JPEG, then the Contents API. Never upload the original.
-5. Do not merge pull requests from this app. Switch on comments the agent mention and sets `stage:working`.
-6. New-app ideas (`app:new` on the Edison repo) do not show Switch on.
+5. Do not merge pull requests from this app. Deploy Agent comments the agent mention and sets `stage:working`.
+6. New-app ideas (`app:new` on the Edison repo) do not show Deploy Agent.
 7. Schema and secrets: there is no Supabase schema. Never commit a GitHub token.
 
 ## Brief message

@@ -312,16 +312,16 @@
       return { primary: 'Create repository', primaryAction: 'open-create', quiet: 'Close', note: 'Creates the GitHub repository and a first ticket. Cloning onto this PC is a separate step.' };
     }
     if (ticket.stage === 'inbox' || ticket.stage === 'parked') {
-      return { primary: 'Mark ready', primaryAction: 'mark-ready', quiet: 'Close', note: 'Marking ready does not start the agent. Switch on does that.' };
+      return { primary: 'Mark ready', primaryAction: 'mark-ready', quiet: 'Close', note: 'Marking ready does not start the agent. Deploy Agent does that.' };
     }
     if ((ticket.stage === 'ready' || ticket.stage === 'needs-input') && ticket.rules !== 'merged') {
-      return { link: '#/settings', linkLabel: 'Settings', quiet: 'Close', note: 'Switch on waits until the agent rules are on the default branch. Start the rules pull request in Settings.' };
+      return { link: '#/settings', linkLabel: 'Settings', quiet: 'Close', note: 'Deploy Agent waits until the agent rules are on the default branch. Start the rules pull request in Settings.' };
     }
     if (ticket.stage === 'ready') {
-      return { primary: 'Switch on', primaryAction: 'switch-on', quiet: 'Close', note: 'Posts ' + vendorMention() + ' on the GitHub issue and moves this to Working. The agent stops at a pull request.' };
+      return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close', note: 'Posts ' + vendorMention() + ' on the GitHub issue and moves this to Working. The agent stops at a pull request.' };
     }
     if (ticket.stage === 'needs-input') {
-      return { primary: 'Switch on', primaryAction: 'switch-on', quiet: 'Close', note: 'Answer above, then switch on. That posts ' + vendorMention() + ' again.' };
+      return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close', note: 'Answer above, then tap Deploy Agent. That posts ' + vendorMention() + ' again.' };
     }
     if (ticket.stage === 'working') {
       return { quiet: 'Close', note: 'The agent is working. It will stop at a pull request. Edison does not merge it.' };
@@ -446,8 +446,8 @@
     html += '<option value="claude"' + (state.vendor === 'claude' ? ' selected' : '') + '>Claude</option>';
     html += '</select></label>';
     html += '<button type="button" class="primary" data-action="save-agent">Save agent</button>';
-    html += '<p class="hint" id="agent-status">Switch on comments ' + vendorMention() + '.</p></section>';
-    html += '<section><h2>Repositories</h2><p class="hint">Switch on stays off until the rules file is on the default branch.</p>';
+    html += '<p class="hint" id="agent-status">Deploy Agent comments ' + vendorMention() + '.</p></section>';
+    html += '<section><h2>Repositories</h2><p class="hint">Deploy Agent stays off until the rules file is on the default branch.</p>';
     repos.forEach(function (repo, index) {
       html += '<div class="repo"><strong>' + esc(repo.name) + '</strong><span>';
       if (repo.rules === 'merged') html += '<span class="ok">Rules on the default branch</span>';
@@ -508,7 +508,7 @@
       { value: 'p2', label: 'P2' },
       { value: 'p3', label: 'P3' }
     ], newDraft.priority) + '</div>';
-    if (newDraft.app === 'New app') html += '<p class="hint">This stays in Edison until you create the repository. Switch on stays hidden.</p>';
+    if (newDraft.app === 'New app') html += '<p class="hint">This stays in Edison until you create the repository. Deploy Agent stays hidden.</p>';
     html += '<label class="field">Description<textarea name="body" placeholder="Optional">' + esc(newDraft.body) + '</textarea></label>';
     html += '<div class="field">Link<input name="url" type="url" inputmode="url" placeholder="https://" /></div>';
     html += '<button type="button" class="quiet" data-action="add-link">Add link</button>';
@@ -661,10 +661,10 @@
     ticket.notes.push({
       who: state.vendor === 'claude' ? 'claude' : 'cursor',
       when: 'just now',
-      text: 'Switched on. Mentioned ' + vendorMention() + '.'
+      text: 'Agent deployed. Mentioned ' + vendorMention() + '.'
     });
     state.workingOpen = true;
-    state.notice = 'Switched on. The agent has this ticket.';
+    state.notice = 'Agent deployed. The agent has this ticket.';
     render();
   }
 
@@ -799,8 +799,8 @@
       state.vendor = document.getElementById('vendor').value;
       var status = document.getElementById('agent-status');
       status.textContent = state.vendor === 'claude'
-        ? 'Saved. Switch on comments @claude. Copy the Claude workflow into an app before it will run there.'
-        : 'Saved. Switch on comments @cursor.';
+        ? 'Saved. Deploy Agent comments @claude. Copy the Claude workflow into an app before it will run there.'
+        : 'Saved. Deploy Agent comments @cursor.';
     }
     if (action === 'start-rules') {
       var repo = repos[Number(el.getAttribute('data-index'))];

@@ -1,6 +1,6 @@
 # Edison development plan
 
-Edison is a phone-first tracker for bugs, changes, features, and new-app ideas. Tickets are GitHub Issues. A background coding agent works only after you tap Switch on, and it stops at a pull request.
+Edison is a phone-first tracker for bugs, changes, features, and new-app ideas. Tickets are GitHub Issues. A background coding agent works only after you tap Deploy Agent, and it stops at a pull request.
 
 ## Decisions
 
@@ -15,7 +15,7 @@ Edison is a phone-first tracker for bugs, changes, features, and new-app ideas. 
 
 `inbox`, `ready`, `working`, `needs-input`, `review`, `parked`. Done is a closed issue.
 
-Switch on is available from Ready and Needs you, once `.cursor/rules/edison.mdc` is on that app's default branch. It comments the agent mention and sets Working. An open pull request moves Working to In review.
+Deploy Agent is available from Ready and Needs you, once `.cursor/rules/edison.mdc` is on that app's default branch. It comments the agent mention and sets Working. An open pull request moves Working to In review.
 
 ## Lightbulb
 

@@ -323,7 +323,7 @@ var EdisonList = (function () {
     html += '<input type="hidden" id="priority" name="priority" value="' + esc(draft.priority || 'p2') + '" />';
     html += '<div class="field">Type' + segment('type', typeOptions(), type) + '</div>';
     html += '<div class="field">Priority' + segment('priority', priorityOptions(false), draft.priority || 'p2') + '</div>';
-    html += '<p class="hint" id="new-app-hint"' + (draft.app === 'new' ? '' : ' hidden') + '>This stays in Edison until you create the repository. Switch on stays hidden.</p>';
+    html += '<p class="hint" id="new-app-hint"' + (draft.app === 'new' ? '' : ' hidden') + '>This stays in Edison until you create the repository. Deploy Agent stays hidden.</p>';
     html += '<label class="field">Description<textarea id="notes" name="notes" placeholder="Optional">' + esc(draft.notes) + '</textarea></label>';
     html += '<div class="field">Link<input id="url" name="url" type="url" inputmode="url" placeholder="https://" /></div>';
     html += '<button type="button" class="quiet" data-action="add-link">Add link</button>';

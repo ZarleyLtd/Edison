@@ -4,14 +4,48 @@ var EdisonTicket = (function () {
   var generation = 0;
   var active = null;
   var readyRepos = {};
+  var freshComment = null;
+
+  function commentsWithFresh(comments, repo, number) {
+    var list = (comments || []).slice();
+    if (!freshComment || freshComment.repo !== repo || String(freshComment.number) !== String(number)) return list;
+    var created = freshComment.comment;
+    if (!created) return list;
+    var index = -1;
+    for (var i = 0; i < list.length; i++) {
+      if (created.id && String(list[i].id) === String(created.id)) {
+        index = i;
+        break;
+      }
+    }
+    if (index === -1) {
+      if (!list.some(function (item) { return item.body === created.body; })) list.push(created);
+      else freshComment = null;
+    } else if (list[index].body !== created.body) {
+      list[index] = created;
+    } else {
+      freshComment = null;
+    }
+    return list;
+  }
+
+  function agentDeployed(issue, comments) {
+    var stage = stageName(issue);
+    if (stage === 'working' || stage === 'review') return true;
+    return (comments || []).some(function (comment) {
+      var body = String(comment.body || '');
+      return /^@(cursor|claude)\b/.test(body) && body.indexOf('Edison ticket:') !== -1;
+    });
+  }
 
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape' || !active || active.token !== generation) return;
-    if (!active.session.sheet && !active.session.confirmClose) return;
+    if (!active.session.sheet && !active.session.confirmClose && !active.session.editingComment) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     active.session.sheet = null;
     active.session.confirmClose = false;
+    active.session.editingComment = null;
     active.draw();
   });
 
@@ -69,12 +103,12 @@ var EdisonTicket = (function () {
           return mount(el, repo, issue.number);
         });
       }
-      var session = { editing: false, confirmClose: false, sheet: null, noteError: '' };
+      var session = { editing: false, confirmClose: false, sheet: null, noteError: '', editingComment: null };
       var ctx = {
         el: el,
         repo: repo,
         issue: issue,
-        comments: parts[1] || [],
+        comments: commentsWithFresh(parts[1], repo, number),
         pulls: parts[2] || [],
         apps: parts[3],
         rules: parts[4],
@@ -145,22 +179,22 @@ var EdisonTicket = (function () {
       primary = '<button type="button" class="primary" data-action="open-create">Create repository</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'inbox' || stage === 'parked') {
-      hint = 'Marking ready does not start the agent. Switch on does that.';
+      hint = 'Marking ready does not start the agent. Deploy Agent does that.';
       primary = '<button type="button" class="primary" data-action="ready">Mark ready</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if ((stage === 'ready' || stage === 'needs-input') && (!rules || rules.state !== 'merged')) {
-      hint = 'Switch on waits until the agent rules are on the default branch.';
+      hint = 'Deploy Agent waits until the agent rules are on the default branch.';
       if (rules && rules.state === 'open' && rules.pull && rules.pull.html_url) link = externalLink(rules.pull.html_url, 'Open rules pull request');
       else link = '<a href="settings.html">Settings</a>';
       if (rules && rules.state === 'error' && rules.message) hint = rules.message;
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'ready') {
       hint = 'Posts the agent mention on the GitHub issue and moves this to Working. The agent stops at a pull request.';
-      primary = '<button type="button" class="primary" data-action="send">Switch on</button>';
+      primary = '<button type="button" class="primary" data-action="send">Deploy Agent</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'needs-input') {
-      hint = 'Answer above, then switch on. That posts the agent mention again.';
-      primary = '<button type="button" class="primary" data-action="send">Switch on</button>';
+      hint = 'Answer above, then tap Deploy Agent. That posts the agent mention again.';
+      primary = '<button type="button" class="primary" data-action="send">Deploy Agent</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'working') {
       hint = 'The agent is working. It will stop at a pull request. Edison does not merge it.';
@@ -190,9 +224,11 @@ var EdisonTicket = (function () {
     var appLabel = isNew ? 'New app' : (app && app.name) || repo;
     var type = EdisonLabels.typeOf(issue.labels);
     var priority = EdisonLabels.priorityOf(issue.labels) || '';
-    var y = el.scrollTop;
+    var scroller = el.querySelector('.ticket-scroll');
+    var scrollOnInner = scroller && getComputedStyle(scroller).display !== 'contents';
+    var y = scrollOnInner ? scroller.scrollTop : el.scrollTop;
     document.title = issue.title + ' \u00b7 Edison';
-    var html = '<article class="ticket">';
+    var html = '<article class="ticket"><div class="ticket-scroll"><div class="ticket-head">';
     html += '<p class="kicker">' + esc(EdisonLabels.STAGE_LABEL[stage] || stage) + ' \u00b7 ' + esc(metaLine(appLabel, type, priority, issue)) + '</p>';
     if (session.editing) {
       html += '<form id="edit-form" class="stack">';
@@ -203,7 +239,7 @@ var EdisonTicket = (function () {
     } else {
       html += '<div class="ticket-title">' + EdisonFormat.bulb(stage, 'lg') + '<h1>' + esc(issue.title) + '</h1></div>';
     }
-    html += actionBar(ctx);
+    html += '</div><div class="ticket-rest">';
     if (issue.state !== 'closed') {
       html += '<p class="meta"><button type="button" class="text" data-action="open-details">Type, priority, stage</button>';
     } else {
@@ -234,21 +270,35 @@ var EdisonTicket = (function () {
       html += '<div class="block-title"><h2>Description</h2><button type="button" class="text" data-action="edit">Edit</button></div>';
       html += '<div class="prose" id="ticket-body">' + (issue.body ? EdisonFormat.renderMarkdown(issue.body) : '<p class="hint">No description yet.</p>') + '</div>';
     }
+    var canEditNotes = !agentDeployed(issue, ctx.comments);
     html += '<div class="block-title"><h2>Notes</h2></div><ol class="notes">';
     if (!ctx.comments.length) html += '<li class="hint">No notes yet.</li>';
     ctx.comments.forEach(function (comment) {
       var who = comment.user && comment.user.login ? comment.user.login : 'note';
-      html += '<li><p class="meta">' + esc(who) + ' \u00b7 ' + esc(EdisonFormat.timeAgo(comment.created_at)) + '</p>';
-      html += '<div class="prose">' + EdisonFormat.renderMarkdown(comment.body || '') + '</div></li>';
+      var editingThis = canEditNotes && session.editingComment && String(session.editingComment) === String(comment.id);
+      html += '<li' + (comment.id ? ' data-comment="' + esc(comment.id) + '"' : '') + '>';
+      if (editingThis) {
+        html += '<form id="note-edit-form" class="stack">';
+        html += '<label class="field">Note<textarea name="note">' + esc(comment.body || '') + '</textarea></label>';
+        html += '<button type="submit" class="primary">Save</button>';
+        html += '<button type="button" class="quiet" data-action="cancel-note">Cancel</button></form>';
+      } else {
+        html += '<div class="note-head"><p class="meta">' + esc(who) + ' \u00b7 ' + esc(EdisonFormat.timeAgo(comment.created_at)) + '</p>';
+        if (canEditNotes && comment.id) html += '<button type="button" class="text" data-action="edit-note" data-id="' + esc(comment.id) + '">Edit</button>';
+        html += '</div><div class="prose">' + EdisonFormat.renderMarkdown(comment.body || '') + '</div>';
+      }
+      html += '</li>';
     });
     html += '</ol>';
     html += '<form id="note-form" class="stack">';
     html += '<label class="field">Add a note<textarea name="note" placeholder="Reply, or add something the agent should know"></textarea></label>';
     if (session.noteError) html += '<p class="inline-error" role="alert">' + esc(session.noteError) + '</p>';
     html += '<button type="submit" class="primary">Add note</button></form>';
-    html += '</article>';
+    html += '</div></div>' + actionBar(ctx) + '</article>';
     el.innerHTML = html;
-    el.scrollTop = y;
+    var nextScroller = el.querySelector('.ticket-scroll');
+    if (nextScroller && getComputedStyle(nextScroller).display !== 'contents') nextScroller.scrollTop = y;
+    else el.scrollTop = y;
     if (session.editing) {
       var title = el.querySelector('#edit-form [name="title"]');
       if (title) title.focus();
@@ -386,6 +436,15 @@ var EdisonTicket = (function () {
     } else if (action === 'cancel-edit') {
       session.editing = false;
       ctx.draw();
+    } else if (action === 'edit-note') {
+      if (agentDeployed(ctx.issue, ctx.comments)) return;
+      session.editingComment = button.getAttribute('data-id');
+      ctx.draw();
+      var noteField = ctx.el.querySelector('#note-edit-form textarea');
+      if (noteField) noteField.focus();
+    } else if (action === 'cancel-note') {
+      session.editingComment = null;
+      ctx.draw();
     } else if (action === 'open-details') {
       session.sheet = 'details';
       ctx.draw();
@@ -407,18 +466,63 @@ var EdisonTicket = (function () {
       if (!note) {
         ctx.session.noteError = 'Write a note first.';
         ctx.draw();
+        var field = ctx.el.querySelector('#note-form textarea');
+        if (field) field.focus();
         return;
       }
       ctx.session.noteError = '';
       button.disabled = true;
-      EdisonApi.createComment(ctx.repo, ctx.issue.number, note).then(function () {
-        BriefMessage.show('Note added', button);
-        mount(ctx.el, ctx.repo, ctx.issue.number);
+      button.textContent = 'Adding\u2026';
+      EdisonApi.createComment(ctx.repo, ctx.issue.number, note).then(function (created) {
+        freshComment = { repo: ctx.repo, number: ctx.issue.number, comment: created };
+        return mount(ctx.el, ctx.repo, ctx.issue.number).then(function () { return created; });
+      }).then(function (created) {
+        var found = created && created.id ? ctx.el.querySelector('[data-comment="' + created.id + '"]') : null;
+        if (!found) {
+          BriefMessage.show('Saved. Open the ticket again if it is not in the list.', button, { durationMs: 2800, multiline: true });
+          return;
+        }
+        if (found.scrollIntoView) found.scrollIntoView({ block: 'nearest' });
+        BriefMessage.show('Note added', found);
       }).catch(function (error) {
         button.disabled = false;
+        button.textContent = 'Add note';
         BriefMessage.show(error.message, button, { durationMs: 2500, multiline: true });
       });
+    } else if (form.id === 'note-edit-form') {
+      event.preventDefault();
+      saveNote(ctx, form);
     }
+  }
+
+  function saveNote(ctx, form) {
+    var button = form.querySelector('button[type="submit"]');
+    if (agentDeployed(ctx.issue, ctx.comments)) {
+      ctx.session.editingComment = null;
+      ctx.draw();
+      return;
+    }
+    var text = String(new FormData(form).get('note') || '').trim();
+    if (!text) {
+      BriefMessage.show('Write a note first.', button);
+      return;
+    }
+    var id = ctx.session.editingComment;
+    button.disabled = true;
+    EdisonApi.updateComment(ctx.repo, id, text).then(function (updated) {
+      freshComment = {
+        repo: ctx.repo,
+        number: ctx.issue.number,
+        comment: updated || { id: id, body: text }
+      };
+      return mount(ctx.el, ctx.repo, ctx.issue.number);
+    }).then(function () {
+      var found = ctx.el.querySelector('[data-comment="' + id + '"]');
+      BriefMessage.show('Note saved', found || ctx.el);
+    }).catch(function (error) {
+      button.disabled = false;
+      BriefMessage.show(error.message, button, { durationMs: 2500, multiline: true });
+    });
   }
 
   function loadChecks(ctx) {
@@ -494,7 +598,7 @@ var EdisonTicket = (function () {
     button.disabled = true;
     EdisonSetup.rulesStatus(repo).then(function (status) {
       if (!status || status.state !== 'merged') {
-        BriefMessage.show('Merge the agent rules before Switch on.', button, { durationMs: 2800, multiline: true });
+        BriefMessage.show('Merge the agent rules before Deploy Agent.', button, { durationMs: 2800, multiline: true });
         return mount(el, repo, issue.number);
       }
       return EdisonAgents.current().then(function (agent) {
@@ -504,7 +608,7 @@ var EdisonTicket = (function () {
           labels: EdisonLabels.replaceStage(issue.labels, 'working')
         });
       }).then(function () {
-        BriefMessage.show('Switched on', button);
+        BriefMessage.show('Agent deployed', button);
         return mount(el, repo, issue.number);
       });
     }).catch(function (error) {

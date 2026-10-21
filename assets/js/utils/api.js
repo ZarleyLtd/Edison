@@ -29,7 +29,8 @@ var EdisonApi = (function () {
     return fetch(EDISON_CONFIG.API + path, {
       method: options.method || 'GET',
       headers: headers,
-      body: options.body || undefined
+      body: options.body || undefined,
+      cache: 'no-store'
     }).then(function (res) {
       var remaining = res.headers.get('X-RateLimit-Remaining');
       var reset = res.headers.get('X-RateLimit-Reset');
@@ -100,6 +101,13 @@ var EdisonApi = (function () {
   function createComment(repo, number, body) {
     return request(repoPath(repo, '/issues/' + number + '/comments'), {
       method: 'POST',
+      body: JSON.stringify({ body: body })
+    });
+  }
+
+  function updateComment(repo, commentId, body) {
+    return request(repoPath(repo, '/issues/comments/' + commentId), {
+      method: 'PATCH',
       body: JSON.stringify({ body: body })
     });
   }
@@ -239,6 +247,7 @@ var EdisonApi = (function () {
     updateIssue: updateIssue,
     comments: comments,
     createComment: createComment,
+    updateComment: updateComment,
     ensureLabels: ensureLabels,
     repoMeta: repoMeta,
     createRepo: createRepo,

@@ -1,7 +1,7 @@
 # Edison starts Claude by commenting @claude on an issue.
 # The edison label is applied when a ticket is first filed, so this
 # workflow does not trigger on that label (it would start work before
-# you tap Switch on). Copy this file to .github/workflows/claude.yml
+# you tap Deploy Agent). Copy this file to .github/workflows/claude.yml
 # in an app, and set the CLAUDE_CODE_OAUTH_TOKEN secret, before
 # switching Edison to Claude.
 name: Claude Code

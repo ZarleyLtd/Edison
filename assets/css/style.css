@@ -853,6 +853,13 @@ a.rules-open {
   padding: 0.75rem 0.85rem;
 }
 
+:is(body[data-page="list"], body[data-page="ticket"]) .note-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 :is(body[data-page="list"], body[data-page="ticket"]) .ask {
   margin: 1rem 0;
   padding: 0.9rem 1rem;
@@ -894,21 +901,54 @@ a.rules-open {
 }
 
 @media (max-width: 1099px) {
-  body[data-page="list"][data-screen="ticket"] .detail-pane { display: block; }
+  body[data-page="list"][data-screen="ticket"] .workspace {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  body[data-page="list"][data-screen="ticket"] .detail-pane {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   body[data-page="list"][data-screen="ticket"] .list-pane { display: none; }
 
-  body[data-page="list"][data-screen="ticket"] .workspace,
-  body[data-page="ticket"] .ticket-page { scroll-padding-bottom: 18rem; }
+  body[data-page="ticket"] .ticket-page {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
   body[data-page="ticket"] .brand,
   body[data-page="ticket"] .top-actions { display: none; }
 
+  body[data-page="list"][data-screen="ticket"] .detail-pane .ticket,
+  body[data-page="ticket"] .ticket {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    max-width: none;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="list"][data-screen="ticket"] .ticket-scroll,
+  body[data-page="ticket"] .ticket-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 1rem 1rem 1.25rem;
+  }
+
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar {
-    position: fixed;
-    z-index: 8;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: static;
+    flex: none;
+    margin: 0;
     padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
     background: rgba(243, 240, 234, 0.96);
     border-top: 1px solid var(--line);
@@ -917,16 +957,24 @@ a.rules-open {
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .primary,
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .quiet,
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .danger { width: 100%; }
-
-  :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .ticket {
-    padding-bottom: 18rem;
-  }
 }
 
 @media (min-width: 1100px) {
+  :is(body[data-page="list"], body[data-page="ticket"]) .ticket {
+    display: flex;
+    flex-direction: column;
+  }
+
+  :is(body[data-page="list"], body[data-page="ticket"]) .ticket-scroll { display: contents; }
+
+  :is(body[data-page="list"], body[data-page="ticket"]) .ticket-head { order: 1; }
+
   :is(body[data-page="list"], body[data-page="ticket"]) .action-bar {
+    order: 2;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
   }
+
+  :is(body[data-page="list"], body[data-page="ticket"]) .ticket-rest { order: 3; }
 }

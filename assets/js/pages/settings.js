@@ -91,8 +91,8 @@ var EdisonSettings = (function () {
       status.textContent = 'Saving…';
       EdisonAgents.saveVendor(id).then(function () {
         status.textContent = id === 'claude'
-          ? 'Saved. Claude is selected. Copy templates/claude.yml into an app before Switch on will run there.'
-          : 'Saved. Cursor is selected. Switch on comments @cursor.';
+          ? 'Saved. Claude is selected. Copy templates/claude.yml into an app before Deploy Agent will run there.'
+          : 'Saved. Cursor is selected. Deploy Agent comments @cursor.';
         BriefMessage.show('Agent saved', button, { durationMs: 2200 });
       }).catch(function (error) {
         status.textContent = error.message;
