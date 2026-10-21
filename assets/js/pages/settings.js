@@ -104,65 +104,80 @@ var EdisonSettings = (function () {
 
     EdisonApps.load().then(function (apps) {
       var list = document.getElementById('repos');
+      var signedIn = !!EdisonAuth.getToken();
       apps.filter(function (app) { return app.repo; }).forEach(function (app) {
         var row = document.createElement('div');
         row.className = 'pr';
         row.innerHTML = '<strong>' + EdisonFormat.escapeHtml(app.name) + '</strong><span class="row"></span>';
-        var labels = document.createElement('button');
-        labels.type = 'button';
-        labels.textContent = 'Labels';
-        labels.addEventListener('click', function () {
-          labels.disabled = true;
-          EdisonApi.ensureLabels(app.repo).then(function () {
-            BriefMessage.show('Labels ready', labels);
-          }).catch(function (error) {
-            BriefMessage.show(error.message, labels, { durationMs: 2500, multiline: true });
-          }).then(function () { labels.disabled = false; });
-        });
-        var rules = document.createElement('button');
-        rules.type = 'button';
-        rules.textContent = 'Rules PR';
-        rules.addEventListener('click', function () {
-          rules.disabled = true;
-          EdisonSetup.proposeRules(app.repo).then(function (pr) {
-            BriefMessage.show('Pull request ready', rules);
-            rules.textContent = 'PR open';
-            window.open(pr.html_url, '_blank', 'noopener');
-          }).catch(function (error) {
-            BriefMessage.show(error.message, rules, { durationMs: 2800, multiline: true });
-            rules.disabled = false;
-          });
-        });
-        row.querySelector('.row').appendChild(labels);
-        row.querySelector('.row').appendChild(rules);
+        var slot = row.querySelector('.row');
         list.appendChild(row);
+        if (!signedIn) {
+          paintRules(slot, app, { state: 'signed-out' });
+          return;
+        }
+        paintRules(slot, app, { state: 'checking' });
+        EdisonSetup.rulesStatus(app.repo).then(function (status) {
+          paintRules(slot, app, status);
+        }).catch(function (error) {
+          paintRules(slot, app, { state: 'error', message: error.message });
+        });
       });
     });
 
-    document.getElementById('setup-all').addEventListener('click', function () {
-      var button = document.getElementById('setup-all');
-      var status = document.getElementById('setup-status');
-      button.disabled = true;
-      EdisonApps.load().then(function (apps) {
-        var repos = apps.filter(function (app) { return app.repo; });
-        var failures = [];
-        return repos.reduce(function (chain, app, index) {
-          return chain.then(function () {
-            status.textContent = (index + 1) + ' of ' + repos.length + ': ' + app.name;
-            return EdisonApi.ensureLabels(app.repo).catch(function (error) {
-              failures.push(app.name + ': ' + error.message);
-            });
-          });
-        }, Promise.resolve()).then(function () {
-          status.textContent = failures.length ? failures.join(' ') : 'Labels are ready on every app.';
-          BriefMessage.show(failures.length ? 'Finished with errors' : 'All apps set up', button);
+    function paintRules(slot, app, status) {
+      slot.textContent = '';
+      if (status.state === 'checking') {
+        slot.appendChild(note('Checking…'));
+        return;
+      }
+      if (status.state === 'signed-out') {
+        slot.appendChild(note('Add a token to check rules.'));
+        return;
+      }
+      if (status.state === 'error') {
+        slot.appendChild(note(status.message || 'Could not check the rules.'));
+        return;
+      }
+      if (status.state === 'merged') {
+        var done = document.createElement('span');
+        done.className = 'rules-status';
+        done.textContent = '\u2713 Rules merged';
+        slot.appendChild(done);
+        return;
+      }
+      if (status.state === 'open' && status.pull && status.pull.html_url) {
+        var open = document.createElement('a');
+        open.className = 'button rules-open';
+        open.href = status.pull.html_url;
+        open.target = '_blank';
+        open.rel = 'noopener noreferrer';
+        open.textContent = 'Pull request open';
+        slot.appendChild(open);
+        return;
+      }
+      var rules = document.createElement('button');
+      rules.type = 'button';
+      rules.textContent = 'Rules PR';
+      rules.addEventListener('click', function () {
+        rules.disabled = true;
+        EdisonSetup.proposeRules(app.repo).then(function (pr) {
+          paintRules(slot, app, { state: 'open', pull: pr });
+          BriefMessage.show('Pull request ready', slot.querySelector('a') || slot);
+          window.open(pr.html_url, '_blank', 'noopener');
+        }).catch(function (error) {
+          rules.disabled = false;
+          BriefMessage.show(error.message, rules, { durationMs: 2800, multiline: true });
         });
-      }).catch(function (error) {
-        status.textContent = error.message;
-      }).then(function () {
-        button.disabled = false;
       });
-    });
+      slot.appendChild(rules);
+    }
+
+    function note(text) {
+      var el = document.createElement('span');
+      el.className = 'hint';
+      el.textContent = text;
+      return el;
+    }
   }
 
   return { init: init };

@@ -2,6 +2,20 @@ var EdisonSetup = (function () {
   'use strict';
 
   var BRANCH = 'edison-agent-rules';
+  var RULES_PATH = '.cursor/rules/edison.mdc';
+
+  function rulesStatus(repo) {
+    return EdisonApi.contents(repo, RULES_PATH).then(function () {
+      return { state: 'merged' };
+    }, function (error) {
+      if (!error || error.status !== 404) throw error;
+      return EdisonApi.openPulls(repo, BRANCH).then(function (pulls) {
+        var pull = pulls && pulls[0];
+        if (pull) return { state: 'open', pull: pull };
+        return { state: 'missing' };
+      });
+    });
+  }
 
   function proposeRules(repo) {
     return EdisonApi.repoMeta(repo).then(function (meta) {
@@ -32,5 +46,5 @@ var EdisonSetup = (function () {
     });
   }
 
-  return { proposeRules: proposeRules };
+  return { proposeRules: proposeRules, rulesStatus: rulesStatus };
 })();

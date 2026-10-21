@@ -17,7 +17,7 @@ Same shape as the other CursorSites apps:
 
 1. Open Settings and save a GitHub personal access token. A classic token with the `repo` scope covers issues, files, pull requests, and creating a repository. The token stays in this browser.
 2. Connect the Cursor GitHub app so `@cursor` comments start a cloud agent. Steps are in [docs/SETUP_CURSOR.md](docs/SETUP_CURSOR.md).
-3. In Settings, set up labels on the app you want to use. HelloWorldCursor is a good first target.
+3. In Settings, start the rules pull request for the app and merge it. Switch on stays off until that file is on the default branch. HelloWorldCursor is a good first target.
 4. File a ticket, mark it ready, and tap Switch on.
 
 On a wide screen the list and the open ticket sit side by side. On a phone the ticket opens on its own page. Press `n` for a new ticket, `/` to search, and Escape to close the sheet.

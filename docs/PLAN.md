@@ -15,7 +15,13 @@ Edison is a phone-first tracker for bugs, changes, features, and new-app ideas. 
 
 `inbox`, `ready`, `working`, `needs-input`, `review`, `parked`. Done is a closed issue.
 
-Switch on is available from Ready and Needs you. It comments the agent mention and sets Working. An open pull request moves Working to In review.
+Switch on is available from Ready and Needs you, once `.cursor/rules/edison.mdc` is on that app's default branch. It comments the agent mention and sets Working. An open pull request moves Working to In review.
+
+## Lightbulb
+
+The lightbulb is the mark and the status signal. Future styling should use different colours and different variants of the bulb to convey different meanings: brightness, glow, greyscale, outline, or a changed colour. Each variant means something. The word for the stage stays next to the bulb, so colour is not the only signal.
+
+The preview in `mockups/` is a first pass: dim for Inbox, brighter for Ready, a glow for Working, violet for Needs you, fully lit for In review, grey for Parked, and green for Done. Those pairings can change. The rule is that a new colour or a new bulb shape is added only when it carries a meaning.
 
 ## Out of scope
 

@@ -15,8 +15,10 @@
       .replace(/"/g, '&quot;');
   }
 
-  function bulb(stage) {
-    return '<span class="bulb-icon stage-' + escapeHtml(stage || 'inbox') + '">' + BULB + '</span>';
+  function bulb(stage, size) {
+    var classes = 'bulb-icon stage-' + escapeHtml(stage || 'inbox');
+    if (size) classes += ' ' + escapeHtml(size);
+    return '<span class="' + classes + '">' + BULB + '</span>';
   }
 
   function timeAgo(iso) {

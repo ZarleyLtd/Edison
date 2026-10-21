@@ -5,7 +5,7 @@ Edison posts an `@cursor` comment on the GitHub issue when you tap Switch on. Cu
 1. Open the Cursor dashboard and connect GitHub for the ZarleyLtd account.
 2. Grant the app access to the repositories you want Edison to work in. HelloWorldCursor is the safe first one.
 3. Set a cloud-agent spend limit if Cursor asks for one. Cloud agents are billed on top of a Pro plan.
-4. In Edison, open Settings and run **Labels** (or **Set up labels on every app**) for that repository.
+4. In Edison Settings, start **Rules PR** for that repository and merge it. Switch on stays off until `.cursor/rules/edison.mdc` is on the default branch.
 5. File a ticket, mark it ready, and tap **Switch on**.
 6. The agent opens a pull request. Review it in Edison or on GitHub. Merge it yourself. Nothing goes live until that merge and GitHub Pages deploys.
 

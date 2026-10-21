@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#e39b12" />
+  <meta name="theme-color" content="#f3f0ea" />
   <meta name="description" content="Edison logs tickets and sends them to a coding agent after you approve." />
   <title>Edison</title>
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
@@ -15,106 +15,33 @@
 </head>
 <body data-page="list">
   <header class="top">
-    <a class="brand" href="index.html">
+    <a class="back" id="back" href="index.html" hidden>Tickets</a>
+    <a class="brand" id="brand" href="index.html">
       <svg class="brand-bulb" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3a8 8 0 0 0-4.6 14.5c.4.4.6.9.6 1.4V21a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.1c0-.5.2-1 .6-1.4A8 8 0 0 0 16 3zm-2.2 20.2h4.4V25a2.2 2.2 0 0 1-4.4 0v-1.8z"/></svg>
       <span>Edison</span>
     </a>
-    <nav aria-label="Primary">
-      <a href="index.html">Tickets</a>
-      <a href="settings.html">Settings</a>
-    </nav>
+    <div class="search-wrap" id="search-wrap" hidden>
+      <label class="sr" for="search">Search tickets</label>
+      <input id="search" type="search" placeholder="Search tickets" autocomplete="off" />
+    </div>
+    <div class="top-actions">
+      <button type="button" class="text" id="search-open" data-action="open-search" aria-expanded="false">Search</button>
+      <button type="button" class="text" id="filter-open" data-action="open-filter" aria-expanded="false">Filter</button>
+      <a href="settings.html" id="settings-link" class="icon-link" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.58-.22 1.12-.54 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg></a>
+    </div>
   </header>
-  <div class="layout two-pane">
-    <section class="list-pane" aria-label="Tickets">
-      <div class="toolbar">
-        <h1>Tickets</h1>
-        <button type="button" class="primary" id="new-ticket">New ticket</button>
-      </div>
-      <p id="error" class="banner" hidden></p>
-      <form id="filters" class="filters" aria-label="Filter tickets">
-        <label class="field">Search<input id="filter-text" type="search" placeholder="Words in the ticket" /></label>
-        <label class="field">App
-          <select id="filter-app"><option value="">All apps</option></select>
-        </label>
-        <label class="field">Type
-          <select id="filter-type">
-            <option value="">Any type</option>
-            <option value="bug">Bug</option>
-            <option value="change">Change</option>
-            <option value="feature">Feature</option>
-            <option value="idea">Idea</option>
-          </select>
-        </label>
-        <label class="field">Stage
-          <select id="filter-stage">
-            <option value="">Any stage</option>
-            <option value="inbox">Inbox</option>
-            <option value="ready">Ready</option>
-            <option value="working">Working</option>
-            <option value="needs-input">Needs you</option>
-            <option value="review">In review</option>
-            <option value="parked">Parked</option>
-          </select>
-        </label>
-        <label class="field">Priority
-          <select id="filter-priority">
-            <option value="">Any priority</option>
-            <option value="p1">p1</option>
-            <option value="p2">p2</option>
-            <option value="p3">p3</option>
-          </select>
-        </label>
-        <div class="state-toggles" role="group" aria-label="Open or done">
-          <button type="button" class="toggle" id="filter-open" aria-pressed="true">Open</button>
-          <button type="button" class="toggle" id="filter-done" aria-pressed="false">Done</button>
-        </div>
-      </form>
-      <div id="list"></div>
-    </section>
-    <section class="detail-pane" id="detail" aria-label="Selected ticket">
+  <div class="workspace">
+    <section id="list" class="list-pane" aria-label="Tickets"></section>
+    <section id="detail" class="detail-pane" aria-label="Ticket">
       <div class="empty">
-        <p class="muted">Select a ticket to read it here. On a phone it opens on its own page.</p>
+        <span class="bulb-icon stage-ready xl"><svg class="bulb-svg" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3a8 8 0 0 0-4.6 14.5c.4.4.6.9.6 1.4V21a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.1c0-.5.2-1 .6-1.4A8 8 0 0 0 16 3zm-2.2 20.2h4.4V25a2.2 2.2 0 0 1-4.4 0v-1.8z"/></svg></span>
+        <h2>What needs you is at the top.</h2>
+        <p class="lede">Select a ticket. On a phone it fills this page.</p>
+        <p class="hint">n new ticket · / search · Esc closes a sheet</p>
       </div>
     </section>
   </div>
-  <div id="sheet" class="sheet-backdrop" hidden>
-    <form id="new-form" class="sheet stack" aria-labelledby="sheet-title">
-      <h2 id="sheet-title">New ticket</h2>
-      <label class="field">Title<input id="title" name="title" required maxlength="120" /></label>
-      <label class="field">App
-        <select id="app" name="app" required>
-          <option value="">Choose an app</option>
-        </select>
-      </label>
-      <label class="field">Type
-        <select id="type" name="type">
-          <option value="bug">Bug</option>
-          <option value="change">Change</option>
-          <option value="feature">Feature</option>
-          <option value="idea">Idea</option>
-        </select>
-      </label>
-      <label class="field">Priority
-        <select id="priority" name="priority">
-          <option value="p1">p1</option>
-          <option value="p2" selected>p2</option>
-          <option value="p3">p3</option>
-        </select>
-      </label>
-      <label class="field">Notes<textarea id="notes" name="notes" placeholder="What did you notice?"></textarea></label>
-      <div class="row">
-        <label class="field">Link<input id="url" type="url" inputmode="url" placeholder="https://" /></label>
-        <button type="button" id="add-url">Add link</button>
-      </div>
-      <ul id="urls" class="chips"></ul>
-      <label class="field">Photos<input id="photos" type="file" accept="image/*" capture="environment" multiple /></label>
-      <div class="row">
-        <button type="submit" class="primary" id="save-ticket">File ticket</button>
-        <button type="button" id="sheet-cancel">Cancel</button>
-      </div>
-    </form>
-  </div>
-  <footer class="site-footer">Tickets for the ZarleyLtd apps.</footer>
+  <div id="sheets"></div>
   <script src="assets/js/config/app-config.js"></script>
   <script src="assets/js/utils/auth.js"></script>
   <script src="assets/js/utils/labels.js"></script>
