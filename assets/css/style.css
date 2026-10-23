@@ -881,6 +881,17 @@ a.rules-open {
   font-size: 1rem;
 }
 
+:is(body[data-page="list"], body[data-page="ticket"]) [data-review] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) [data-review][hidden] { display: none; }
+
+:is(body[data-page="list"], body[data-page="ticket"]) .pr-panel [data-review] { margin-top: 0.55rem; }
+
 :is(body[data-page="list"], body[data-page="ticket"]) .ok { color: var(--ok); font-weight: 650; }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .inline-error {

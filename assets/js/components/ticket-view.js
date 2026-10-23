@@ -263,6 +263,7 @@ var EdisonTicket = (function () {
       if (!shown.length) shown = ctx.pulls.slice(0, 1);
       shown.forEach(function (pr, index) {
         html += '<div class="pr-panel"><p class="meta">Pull request</p><h2>' + externalLink(pr.html_url, pr.title) + '</h2>';
+        if (index === 0) html += '<div data-review hidden></div>';
         html += '<p class="ok" data-checks="' + index + '">' + esc(pr.state) + '</p></div>';
       });
     }
@@ -525,28 +526,61 @@ var EdisonTicket = (function () {
     });
   }
 
+  function settled(promise) {
+    return promise.then(function (value) {
+      return value;
+    }, function () {
+      return null;
+    });
+  }
+
+  function reviewLabel(page, alone) {
+    if (alone && /(^|\/)index\.html?$/i.test(page)) return 'Review page';
+    return 'Review ' + page.split('/').pop();
+  }
+
+  function paintReviewLinks(ctx, sha, files) {
+    var pages = EdisonQuery.previewPages(files);
+    var html = pages.map(function (page) {
+      return externalLink(
+        EdisonQuery.previewPageUrl(EDISON_CONFIG.OWNER, ctx.repo, sha, page),
+        reviewLabel(page, pages.length === 1)
+      );
+    }).join('');
+    ctx.el.querySelectorAll('[data-review]').forEach(function (slot) {
+      slot.innerHTML = html;
+      slot.hidden = false;
+    });
+  }
+
   function loadChecks(ctx) {
     var pulls = ctx.pulls.filter(function (pr) { return pr.state === 'open'; });
     if (!pulls.length) pulls = ctx.pulls.slice(0, 1);
     if (stageName(ctx.issue) !== 'review') return;
     pulls.forEach(function (pr, index) {
+      var sha = '';
       EdisonApi.request('/repos/' + EDISON_CONFIG.OWNER + '/' + encodeURIComponent(ctx.repo) + '/pulls/' + pr.number).then(function (full) {
-        var sha = full.head && full.head.sha;
+        sha = full.head && full.head.sha;
         if (!sha) return null;
-        return EdisonApi.checkRuns(ctx.repo, sha);
-      }).then(function (result) {
-        if (!result || ctx.token !== generation) return;
+        return Promise.all([
+          settled(EdisonApi.checkRuns(ctx.repo, sha)),
+          settled(EdisonApi.request('/repos/' + EDISON_CONFIG.OWNER + '/' + encodeURIComponent(ctx.repo) + '/pulls/' + pr.number + '/files?per_page=100')),
+          settled(EdisonApi.repoMeta(ctx.repo))
+        ]);
+      }).then(function (parts) {
+        if (!parts || ctx.token !== generation) return;
         var slot = ctx.el.querySelector('[data-checks="' + index + '"]');
-        if (!slot) return;
-        var runs = result.check_runs || [];
-        if (!runs.length) {
-          slot.textContent = 'No checks yet';
-          return;
+        var runs = (parts[0] && parts[0].check_runs) || [];
+        if (slot) {
+          if (!runs.length) slot.textContent = 'No checks yet';
+          else {
+            var failed = runs.filter(function (run) { return run.conclusion === 'failure'; }).length;
+            slot.textContent = failed
+              ? failed + ' check' + (failed === 1 ? '' : 's') + ' failed'
+              : runs.length + ' check' + (runs.length === 1 ? '' : 's') + ' passed';
+          }
         }
-        var failed = runs.filter(function (run) { return run.conclusion === 'failure'; }).length;
-        slot.textContent = failed
-          ? failed + ' check' + (failed === 1 ? '' : 's') + ' failed'
-          : runs.length + ' check' + (runs.length === 1 ? '' : 's') + ' passed';
+        if (index === 0 && parts[2] && parts[2].private === false) paintReviewLinks(ctx, sha, parts[1]);
       }).catch(function () {});
     });
   }

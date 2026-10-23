@@ -41,6 +41,20 @@ test('pull request query and mention check', function () {
   assert.equal(query.mentionsIssue('See #120 for context', 12), false);
 });
 
+test('review link points at the unmerged commit', function () {
+  const url = query.previewPageUrl('ZarleyLtd', 'HelloWorldCursor', 'abc123', 'index.html');
+  assert.equal(url, 'https://htmlpreview.github.io/?https://raw.githubusercontent.com/ZarleyLtd/HelloWorldCursor/abc123/index.html');
+  const nested = query.previewPageUrl('ZarleyLtd', 'HelloWorldCursor', 'abc123', 'guides/my page.html');
+  assert.equal(nested, 'https://htmlpreview.github.io/?https://raw.githubusercontent.com/ZarleyLtd/HelloWorldCursor/abc123/guides/my%20page.html');
+  assert.deepEqual(query.previewPages([
+    { filename: 'assets/css/style.css', status: 'modified' },
+    { filename: 'leagues.html', status: 'modified' },
+    { filename: 'old.html', status: 'removed' },
+    { filename: 'index.html', status: 'modified' }
+  ]), ['index.html', 'leagues.html']);
+  assert.deepEqual(query.previewPages([{ filename: 'README.md', status: 'added' }]), ['index.html']);
+});
+
 test('repo names suggested from a title stay valid', function () {
   assert.equal(query.suggestRepoName('bus times widget'), 'BusTimesWidget');
   assert.equal(query.validRepoName(query.suggestRepoName('bus times widget')), true);

@@ -57,6 +57,40 @@
     return /^[A-Za-z0-9_.-]{1,100}$/.test(String(name || ''));
   }
 
+  function previewPageUrl(owner, repo, sha, page) {
+    var path = String(page || 'index.html').replace(/^\/+/, '');
+    var encoded = path.split('/').filter(Boolean).map(function (part) {
+      return encodeURIComponent(part);
+    }).join('/');
+    var raw = 'https://raw.githubusercontent.com/' +
+      encodeURIComponent(owner) + '/' +
+      encodeURIComponent(repo) + '/' +
+      encodeURIComponent(sha) + '/' +
+      encoded;
+    return 'https://htmlpreview.github.io/?' + raw;
+  }
+
+  function previewPages(files) {
+    var html = [];
+    var list = Array.isArray(files) ? files : [];
+    list.forEach(function (file) {
+      var name = typeof file === 'string' ? file : (file && file.filename) || '';
+      var status = typeof file === 'string' ? '' : (file && file.status) || '';
+      if (status === 'removed' || status === 'deleted') return;
+      if (!/\.html?$/i.test(name)) return;
+      if (html.indexOf(name) === -1) html.push(name);
+    });
+    if (!html.length) return ['index.html'];
+    html.sort(function (a, b) {
+      var aHome = /(^|\/)index\.html?$/i.test(a);
+      var bHome = /(^|\/)index\.html?$/i.test(b);
+      if (aHome && !bHome) return -1;
+      if (bHome && !aHome) return 1;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
+    return html.slice(0, 4);
+  }
+
   function insertApp(apps, app) {
     var rest = (apps || []).filter(function (item) {
       return !item.isNew && item.repo !== app.repo;
@@ -76,6 +110,8 @@
     buildIssueQuery: buildIssueQuery,
     buildPrQuery: buildPrQuery,
     mentionsIssue: mentionsIssue,
+    previewPageUrl: previewPageUrl,
+    previewPages: previewPages,
     suggestRepoName: suggestRepoName,
     validRepoName: validRepoName,
     insertApp: insertApp
