@@ -470,7 +470,7 @@ a.rules-open {
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .list-head h1 {
-  font-size: 1.45rem;
+  font-size: 1.75rem;
   line-height: 1.15;
   margin: 0;
 }
@@ -508,7 +508,7 @@ a.rules-open {
 
 :is(body[data-page="list"], body[data-page="ticket"]) .section-label {
   margin: 1.25rem 1rem 0.35rem;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -551,7 +551,7 @@ a.rules-open {
 :is(body[data-page="list"], body[data-page="ticket"]) .attention h2,
 :is(body[data-page="list"], body[data-page="ticket"]) .row-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   letter-spacing: -0.02em;
   font-weight: 650;
 }
@@ -583,9 +583,26 @@ a.rules-open {
 :is(body[data-page="list"], body[data-page="ticket"]) .row-link .pri { grid-column: 3; grid-row: 1; }
 :is(body[data-page="list"], body[data-page="ticket"]) .row-link .meta { grid-column: 2 / -1; grid-row: 2; margin-top: 0; }
 
-:is(body[data-page="list"], body[data-page="ticket"]) .pri { font-size: 0.85rem; font-weight: 700; }
+:is(body[data-page="list"], body[data-page="ticket"]) .pri { font-size: 1rem; font-weight: 700; }
 :is(body[data-page="list"], body[data-page="ticket"]) .pri.p3,
 :is(body[data-page="list"], body[data-page="ticket"]) .row-link.done { color: var(--muted); }
+
+body[data-page="list"] .list-pane,
+body[data-page="list"] .detail-pane > .empty {
+  font-size: 1.125rem;
+}
+
+body[data-page="list"] .empty h2 {
+  font-size: 1.6rem;
+}
+
+body[data-page="list"] .list-pane .quote {
+  font-size: 1.2rem;
+}
+
+body[data-page="list"] .list-pane .meta {
+  font-size: 1rem;
+}
 
 :is(body[data-page="list"], body[data-page="ticket"]) .row-link[aria-current="page"],
 :is(body[data-page="list"], body[data-page="ticket"]) .attention[aria-current="page"] { background: var(--wash); }
@@ -630,27 +647,26 @@ a.rules-open {
 
 :is(body[data-page="list"], body[data-page="ticket"]) .segment {
   display: flex;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--paper);
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .segment button {
-  flex: 1;
-  min-height: 44px;
+  flex: 0 1 auto;
+  min-height: 40px;
   border: 0;
-  border-right: 1px solid var(--line);
-  border-radius: 0;
+  border-radius: 999px;
   background: transparent;
-  padding: 0.3rem 0.2rem;
+  padding: 0.15rem 0.7rem;
+  color: var(--muted);
 }
 
-:is(body[data-page="list"], body[data-page="ticket"]) .segment button:last-child { border-right: 0; }
-
 :is(body[data-page="list"], body[data-page="ticket"]) .segment button[aria-pressed="true"] {
-  background: var(--ink);
-  color: #f7f5f0;
+  background: #fff1cc;
+  color: #6b4704;
+  font-weight: 700;
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .backdrop {
@@ -789,10 +805,26 @@ a.rules-open {
   height: 2rem;
 }
 
-:is(body[data-page="list"], body[data-page="ticket"]) .kicker {
+:is(body[data-page="list"], body[data-page="ticket"]) .kicker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin: 0 0 0.35rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .kicker {
+  margin: 0;
+  min-width: 0;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .kicker-row button.text {
+  flex: none;
+  margin-left: auto;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .ticket-title {
@@ -800,6 +832,10 @@ a.rules-open {
   align-items: flex-start;
   justify-content: flex-start;
   gap: 0.65rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .ticket-links {
+  margin-top: 0.85rem;
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .action-bar {
@@ -845,11 +881,12 @@ a.rules-open {
 
 :is(body[data-page="list"], body[data-page="ticket"]) .notes {
   list-style: none;
-  margin: 0;
-  padding: 0;
+  margin: 0 0 1.15rem;
+  padding: 0 0 1.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  border-bottom: 1px solid var(--line);
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .notes li {
