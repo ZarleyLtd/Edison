@@ -213,6 +213,10 @@ var EdisonApi = (function () {
     });
   }
 
+  function pull(repo, number) {
+    return request(repoPath(repo, '/pulls/' + number));
+  }
+
   function openPulls(repo, head) {
     return request(repoPath(repo, '/pulls?state=open&head=' + encodeURIComponent(owner() + ':' + head)));
   }
@@ -263,6 +267,8 @@ var EdisonApi = (function () {
     putText: putText,
     createBranch: createBranch,
     branchSha: branchSha,
+    pull: pull,
+    decodeContent: decodeGitHubContent,
     openPulls: openPulls,
     createPull: createPull,
     mergePull: mergePull,

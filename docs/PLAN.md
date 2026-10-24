@@ -15,7 +15,9 @@ Edison is a phone-first tracker for bugs, changes, features, and new-app ideas. 
 
 `inbox`, `ready`, `working`, `needs-input`, `review`, `parked`. Done is a closed issue.
 
-Deploy Agent is available from Ready and Needs you, once `.cursor/rules/edison.mdc` is on that app's default branch. It comments the agent mention and sets Working. An open pull request moves Working to In review.
+Deploy Agent is available from Ready and Needs you, once `.cursor/rules/edison.mdc` is on that app's default branch. It comments the agent mention and sets Working. The first open pull request moves Working to In review.
+
+Later rounds stay on that pull request. Notes do not start an agent. Send to agent, from In review, continues the open pull request and includes every note left since the previous send. Working stays until a new commit lands on that pull request. Merge is still how the work goes live. A deploy after the pull request is merged starts a new one.
 
 ## Lightbulb
 

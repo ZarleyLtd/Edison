@@ -613,6 +613,11 @@ a.rules-open {
   min-height: 48px;
 }
 
+:is(body[data-page="list"], body[data-page="ticket"]) button.secondary {
+  border-radius: 12px;
+  min-height: 48px;
+}
+
 :is(body[data-page="list"], body[data-page="ticket"]) button.quiet {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -742,6 +747,7 @@ a.rules-open {
   }
 
   :is(body[data-page="list"], body[data-page="ticket"]) .action-bar .primary,
+  :is(body[data-page="list"], body[data-page="ticket"]) .action-bar .secondary,
   :is(body[data-page="list"], body[data-page="ticket"]) .action-bar .quiet,
   :is(body[data-page="list"], body[data-page="ticket"]) .action-bar .danger { width: auto; }
 
@@ -966,6 +972,7 @@ a.rules-open {
   }
 
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .primary,
+  :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .secondary,
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .quiet,
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .danger { width: 100%; }
 }

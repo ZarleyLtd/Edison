@@ -55,6 +55,70 @@ test('review link points at the unmerged commit', function () {
   assert.deepEqual(query.previewPages([{ filename: 'README.md', status: 'added' }]), ['index.html']);
 });
 
+test('a follow-up waits for a new commit and then catches up on later notes', function () {
+  const before = { body: 'Look at the header' };
+  const marker = { body: query.deployMarker(18, 'aaa111') };
+  const bot = { body: 'Opened the pull request.', user: { type: 'Bot' } };
+  const first = { body: 'Make the button larger' };
+  const second = { body: 'And the empty state' };
+  const comments = [before, marker, bot, first, second];
+  assert.deepEqual(query.pendingNotes(comments, ''), ['Make the button larger', 'And the empty state']);
+  assert.deepEqual(query.pendingNotes(comments, 'Also the heading'), [
+    'Make the button larger',
+    'And the empty state',
+    'Also the heading'
+  ]);
+  assert.deepEqual(query.pendingNotes([before, marker, bot], ''), []);
+  assert.equal(query.noteText(marker.body), '');
+  assert.equal(query.roundLanded(comments, 'aaa111'), false);
+  assert.equal(query.roundLanded(comments, 'bbb222'), true);
+  assert.equal(query.roundLanded([{ body: query.deployMarker() }], 'bbb222'), true);
+  assert.equal(query.roundLanded([], 'bbb222'), true);
+  const pulls = [
+    { number: 20, state: 'open', created_at: '2026-02-02T00:00:00Z' },
+    { number: 18, state: 'open', created_at: '2026-01-01T00:00:00Z' },
+    { number: 9, state: 'closed', created_at: '2025-01-01T00:00:00Z' }
+  ];
+  assert.equal(query.oldestOpenPull(pulls).number, 18);
+  const comment = query.followUpComment({
+    mention: '@cursor',
+    notes: ['Make the button larger', 'And the empty state'],
+    pr: 18,
+    branch: 'saturday',
+    issue: 31,
+    title: 'Saturday timetable',
+    repo: 'BGS',
+    owner: 'ZarleyLtd'
+  });
+  assert.match(comment, /branch `saturday`/);
+  assert.match(comment, /Do not open another pull request/);
+  assert.match(comment, /1\. Make the button larger/);
+  assert.match(comment, /2\. And the empty state/);
+  assert.ok(comment.indexOf('1. Make the button larger') < comment.indexOf('2. And the empty state'));
+});
+
+test('agent updates on the pull request join the ticket notes after the send', function () {
+  const issueComments = [
+    { body: 'I added a centered Hello button.', user: { login: 'cursor[bot]', type: 'Bot' }, created_at: '2026-10-22T22:39:39Z' },
+    { body: 'Show Hello Clicked when the button is pressed.', user: { login: 'ZarleyLtd', type: 'User' }, created_at: '2026-10-24T19:05:08Z' },
+    { body: query.deployMarker(7, 'c9cf722'), user: { login: 'ZarleyLtd', type: 'User' }, created_at: '2026-10-24T19:05:26Z' }
+  ];
+  const prComments = [
+    { body: 'Added a centered Hello button on the homepage.', user: { login: 'cursor[bot]', type: 'Bot' }, created_at: '2026-10-22T22:55:46Z' },
+    { body: '@cursor\n\nContinue from the commits already on branch `feature`.', user: { login: 'ZarleyLtd', type: 'User' }, created_at: '2026-10-24T19:05:25Z' },
+    { body: 'Clicking the homepage Hello button now shows Hello Clicked.', user: { login: 'cursor[bot]', type: 'Bot' }, created_at: '2026-10-24T19:09:13Z' }
+  ];
+  const notes = query.withAgentUpdates(issueComments, prComments).map(function (comment) {
+    return query.noteText(comment.body);
+  }).filter(Boolean);
+  assert.deepEqual(notes, [
+    'I added a centered Hello button.',
+    'Show Hello Clicked when the button is pressed.',
+    'Clicking the homepage Hello button now shows Hello Clicked.'
+  ]);
+  assert.deepEqual(query.pendingNotes(query.withAgentUpdates(issueComments, prComments), ''), []);
+});
+
 test('repo names suggested from a title stay valid', function () {
   assert.equal(query.suggestRepoName('bus times widget'), 'BusTimesWidget');
   assert.equal(query.validRepoName(query.suggestRepoName('bus times widget')), true);

@@ -322,9 +322,15 @@
       return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close', note: 'Posts ' + vendorMention() + ' on the GitHub issue and moves this to Working. The agent stops at a pull request.' };
     }
     if (ticket.stage === 'needs-input') {
+      if (ticket.pr && ticket.pr.state !== 'merged') {
+        return { primary: 'Deploy Agent', primaryAction: 'send-followup', quiet: 'Close', note: 'Notes wait until you tap Deploy Agent. That continues this pull request and includes every note since the last round.' };
+      }
       return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close', note: 'Answer above, then tap Deploy Agent. That posts ' + vendorMention() + ' again.' };
     }
     if (ticket.stage === 'working') {
+      if (ticket.pr && ticket.pr.state !== 'merged') {
+        return { quiet: 'Close', note: 'The agent is updating this pull request. A note saved now is included the next time you send.' };
+      }
       return { quiet: 'Close', note: 'The agent is working. It stops at a pull request.' };
     }
     if (ticket.stage === 'review') {
@@ -332,13 +338,15 @@
         return { quiet: 'Close ticket', note: 'The pull request is merged. Close this ticket when you are finished.' };
       }
       return {
-        primary: 'Merge PR',
-        primaryAction: 'merge-ask',
+        primary: 'Send to agent',
+        primaryAction: 'send-followup',
+        secondary: 'Merge PR',
+        secondaryAction: 'merge-ask',
         link: ticket.pr ? ticket.pr.url : 'https://github.com/ZarleyLtd',
         linkLabel: 'Open pull request',
         external: true,
         quiet: 'Close ticket',
-        note: 'Review the page, then merge. Close this ticket when you are finished.'
+        note: 'Add notes for what should change. Send to agent continues this pull request and picks them up. Merge when you want this version live.'
       };
     }
     return { quiet: 'Close', note: '' };
@@ -359,6 +367,7 @@
     var html = '<div class="action-bar">';
     if (spec.note) html += '<p class="hint">' + esc(spec.note) + '</p>';
     if (spec.primary) html += '<button type="button" class="primary" data-action="' + spec.primaryAction + '">' + esc(spec.primary) + '</button>';
+    if (spec.secondary) html += '<button type="button" class="secondary" data-action="' + spec.secondaryAction + '">' + esc(spec.secondary) + '</button>';
     if (spec.link) {
       html += spec.external
         ? externalLink(spec.link, spec.linkLabel)
@@ -433,7 +442,7 @@
     });
     html += '</ol>';
     html += '<form id="note-form" class="stack">';
-    html += '<label class="field">Add a note<textarea name="note" placeholder="Reply, or add something the agent should know"></textarea></label>';
+    html += '<label class="field">Add a note<textarea name="note" placeholder="Add a note. This does not start the agent."></textarea></label>';
     if (state.noteError) html += '<p class="inline-error" role="alert">' + esc(state.noteError) + '</p>';
     html += '<button type="submit" class="primary">Add note</button></form>';
     html += '</article>';
@@ -668,6 +677,22 @@
     render();
   }
 
+  function sendFollowUp(ticket) {
+    var field = document.querySelector('#note-form textarea');
+    var draft = field ? String(field.value || '').trim() : '';
+    if (draft) ticket.notes.push({ who: 'you', when: 'just now', text: draft });
+    if (!ticket.notes.length) {
+      state.noteError = 'Write a note first.';
+      paintDetail();
+      return;
+    }
+    state.noteError = '';
+    ticket.stage = 'working';
+    ticket.ago = 'just now';
+    state.notice = 'Sent. The agent continues this pull request and picks up the notes.';
+    render();
+  }
+
   function switchOn(ticket) {
     ticket.stage = 'working';
     ticket.ago = 'just now';
@@ -761,6 +786,7 @@
     if (!ticket && action !== 'save-token' && action !== 'clear-token' && action !== 'save-agent' && action !== 'start-rules') return;
     if (action === 'mark-ready') markReady(ticket);
     if (action === 'switch-on') switchOn(ticket);
+    if (action === 'send-followup') sendFollowUp(ticket);
     if (action === 'merge-ask') {
       state.confirmClose = false;
       state.confirmMerge = true;

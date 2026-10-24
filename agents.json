@@ -10,5 +10,5 @@
       "label": "Claude Code"
     }
   },
-  "brief": "Read this issue, including comments and linked attachments. Implement the change on a new branch. Open a pull request that references this issue. Do not merge. Comment a short summary of what you changed and how to review it.\n\nIf you are blocked or need a decision, comment the question and add the label stage:needs-input (and remove stage:working)."
+  "brief": "Read this issue, including comments and linked attachments. If a pull request for this issue is already open, continue from the commits on that branch and do not open another pull request. Act on every note left since the last round, oldest first. Otherwise implement the change on a new branch and open a pull request that references this issue. Do not merge. Comment a short summary of what you changed and how to review it.\n\nWhen this round is on the pull request, add the label stage:review and remove stage:working, including when no code change was needed. If you are blocked or need a decision, comment the question and add the label stage:needs-input (and remove stage:working)."
 }

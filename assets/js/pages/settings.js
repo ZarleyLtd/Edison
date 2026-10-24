@@ -145,6 +145,28 @@ var EdisonSettings = (function () {
         slot.appendChild(done);
         return;
       }
+      if (status.state === 'stale') {
+        var stale = document.createElement('span');
+        stale.className = 'rules-status';
+        stale.textContent = 'Rules need an update';
+        slot.appendChild(stale);
+        var update = document.createElement('button');
+        update.type = 'button';
+        update.textContent = 'Update rules';
+        update.addEventListener('click', function () {
+          update.disabled = true;
+          EdisonSetup.proposeRules(app.repo).then(function (pr) {
+            paintRules(slot, app, { state: 'open', pull: pr });
+            BriefMessage.show('Pull request ready', slot.querySelector('a') || slot);
+            window.open(pr.html_url, '_blank', 'noopener');
+          }).catch(function (error) {
+            update.disabled = false;
+            BriefMessage.show(error.message, update, { durationMs: 2800, multiline: true });
+          });
+        });
+        slot.appendChild(update);
+        return;
+      }
       if (status.state === 'open' && status.pull && status.pull.html_url) {
         var open = document.createElement('a');
         open.className = 'button rules-open';

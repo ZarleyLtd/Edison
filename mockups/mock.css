@@ -306,7 +306,7 @@ button.text {
   color: var(--muted);
 }
 
-.primary, .quiet, .danger {
+.primary, .secondary, .quiet, .danger {
   min-height: 48px;
   border-radius: 12px;
   padding: 0.6rem 1rem;
@@ -319,7 +319,7 @@ button.text {
   font-weight: 650;
 }
 
-.quiet, .danger {
+.secondary, .quiet, .danger {
   background: var(--paper);
   border: 1px solid var(--line);
   text-decoration: none;
@@ -334,7 +334,7 @@ button.text {
 
 .new-btn { width: auto; min-width: 7.5rem; }
 
-.ticket { padding: 1rem 1rem 12rem; max-width: 40rem; }
+.ticket { padding: 1rem 1rem 20rem; max-width: 40rem; }
 
 h1, h2, .row-title { overflow-wrap: anywhere; }
 
@@ -361,6 +361,7 @@ h1, h2, .row-title { overflow-wrap: anywhere; }
 }
 
 .action-bar .primary,
+.action-bar .secondary,
 .action-bar .quiet,
 .action-bar .danger { width: 100%; }
 
@@ -573,6 +574,7 @@ body.sheet-open .action-bar { display: none; }
   }
 
   .action-bar .primary,
+  .action-bar .secondary,
   .action-bar .quiet,
   .action-bar .danger { width: auto; }
 

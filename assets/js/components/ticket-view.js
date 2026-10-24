@@ -79,6 +79,20 @@ var EdisonTicket = (function () {
     return issue.state === 'closed' ? 'done' : EdisonLabels.stageOf(issue.labels);
   }
 
+  function agentPullComments(repo, pulls) {
+    var list = pulls || [];
+    if (!list.length) return Promise.resolve([]);
+    return Promise.all(list.map(function (pr) {
+      return EdisonApi.comments(repo, pr.number).catch(function () { return []; });
+    })).then(function (groups) {
+      var all = [];
+      groups.forEach(function (group) {
+        all = all.concat(group || []);
+      });
+      return all;
+    });
+  }
+
   function mount(el, repo, number) {
     var token = ++generation;
     clearSheet();
@@ -94,23 +108,31 @@ var EdisonTicket = (function () {
     ]).then(function (parts) {
       if (token !== generation) return;
       var issue = parts[0];
-      var stage = stageName(issue);
-      var openPulls = (parts[2] || []).filter(function (pr) { return pr.state === 'open'; });
-      if (stage === 'working' && openPulls.length) {
-        return EdisonApi.updateIssue(repo, issue.number, {
-          labels: EdisonLabels.replaceStage(issue.labels, 'review')
-        }).then(function () {
-          if (token !== generation) return;
-          return mount(el, repo, issue.number);
-        });
+      var pulls = parts[2] || [];
+      return agentPullComments(repo, pulls).then(function (prComments) {
+      if (token !== generation) return;
+      var comments = EdisonQuery.withAgentUpdates(commentsWithFresh(parts[1], repo, number), prComments);
+      var target = EdisonQuery.oldestOpenPull(pulls);
+      var promote = Promise.resolve(false);
+      if (stageName(issue) === 'working' && target) {
+        promote = EdisonApi.pull(repo, target.number).then(function (full) {
+          var sha = full && full.head && full.head.sha;
+          if (!EdisonQuery.roundLanded(comments, sha)) return false;
+          return EdisonApi.updateIssue(repo, issue.number, {
+            labels: EdisonLabels.replaceStage(issue.labels, 'review')
+          }).then(function () { return true; });
+        }).catch(function () { return false; });
       }
+      return promote.then(function (moved) {
+        if (token !== generation) return;
+        if (moved) return mount(el, repo, number);
       var session = { editing: false, confirmClose: false, confirmMerge: false, checks: null, mergeable: null, sheet: null, noteError: '', editingComment: null };
       var ctx = {
         el: el,
         repo: repo,
         issue: issue,
-        comments: commentsWithFresh(parts[1], repo, number),
-        pulls: parts[2] || [],
+        comments: comments,
+        pulls: pulls,
         apps: parts[3],
         rules: parts[4],
         session: session,
@@ -136,6 +158,8 @@ var EdisonTicket = (function () {
         });
       }
       draw();
+      });
+      });
     }).catch(function (error) {
       if (token !== generation) return;
       el.innerHTML = '<p class="banner" role="alert">' + esc(error.message) + '</p>';
@@ -151,10 +175,23 @@ var EdisonTicket = (function () {
   }
 
   function openPull(pulls) {
-    for (var i = 0; i < pulls.length; i++) {
-      if (pulls[i].state === 'open') return pulls[i];
-    }
-    return null;
+    return EdisonQuery.oldestOpenPull(pulls);
+  }
+
+  function shownPulls(pulls) {
+    var open = EdisonQuery.openPullsByAge(pulls);
+    if (open.length) return open;
+    return (pulls || []).slice(0, 1);
+  }
+
+  function rulesReady(status) {
+    return !!(status && (status.state === 'merged' || status.state === 'stale'));
+  }
+
+  function pullHint(pulls) {
+    var open = EdisonQuery.openPullsByAge(pulls);
+    if (open.length < 2) return '';
+    return ' More than one pull request is open. Updates go to #' + open[0].number + '.';
   }
 
   function actionBar(ctx) {
@@ -184,29 +221,39 @@ var EdisonTicket = (function () {
       hint = 'Marking ready does not start the agent. Deploy Agent does that.';
       primary = '<button type="button" class="primary" data-action="ready">Mark ready</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
-    } else if ((stage === 'ready' || stage === 'needs-input') && (!rules || rules.state !== 'merged')) {
+    } else if ((stage === 'ready' || stage === 'needs-input') && !rulesReady(rules)) {
       hint = 'Deploy Agent waits until the agent rules are on the default branch.';
       if (rules && rules.state === 'open' && rules.pull && rules.pull.html_url) link = externalLink(rules.pull.html_url, 'Open rules pull request');
       else link = '<a href="settings.html">Settings</a>';
       if (rules && rules.state === 'error' && rules.message) hint = rules.message;
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'ready') {
-      hint = 'Posts the agent mention on the GitHub issue and moves this to Working. The agent stops at a pull request.';
+      if (openPull(ctx.pulls)) {
+        hint = 'A pull request is already open. Deploy Agent continues it and includes every note since the last round.' + pullHint(ctx.pulls);
+      } else {
+        hint = 'Posts the agent mention on the GitHub issue and moves this to Working. The agent stops at a pull request.';
+      }
       primary = '<button type="button" class="primary" data-action="send">Deploy Agent</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'needs-input') {
-      hint = 'Answer above, then tap Deploy Agent. That posts the agent mention again.';
+      if (openPull(ctx.pulls)) {
+        hint = 'Notes wait until you tap Deploy Agent. That continues this pull request and includes every note since the last round.' + pullHint(ctx.pulls);
+      } else {
+        hint = 'Answer above, then tap Deploy Agent. That posts the agent mention again.';
+      }
       primary = '<button type="button" class="primary" data-action="send">Deploy Agent</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'working') {
-      hint = 'The agent is working. It stops at a pull request.';
+      hint = openPull(ctx.pulls)
+        ? 'The agent is updating this pull request. A note saved now is included the next time you send.'
+        : 'The agent is working. It stops at a pull request.';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'review') {
       var pr = openPull(ctx.pulls);
       if (pr) {
-        hint = 'Review the page, then merge. Close this ticket when you are finished.';
-        primary = '<button type="button" class="primary" data-action="merge-ask">Merge PR</button>';
-        link = externalLink(pr.html_url, 'Open pull request');
+        hint = 'Add notes for what should change. Send to agent continues this pull request and picks them up. Merge when you want this version live.' + pullHint(ctx.pulls);
+        primary = '<button type="button" class="primary" data-action="send">Send to agent</button>';
+        link = '<button type="button" class="secondary" data-action="merge-ask">Merge PR</button>' + externalLink(pr.html_url, 'Open pull request');
       } else if (ctx.pulls.length) {
         hint = 'The pull request is merged. Close this ticket when you are finished.';
       } else {
@@ -263,13 +310,15 @@ var EdisonTicket = (function () {
       if (ready.number) html += '<p><a href="index.html?repo=' + encodeURIComponent(ready.repo) + '&n=' + encodeURIComponent(ready.number) + '">Open the first ticket</a></p>';
       html += '</div>';
     }
-    if (stage === 'needs-input' && ctx.comments.length) {
-      var ask = EdisonCard.excerpt(ctx.comments[ctx.comments.length - 1].body);
+    var visibleNotes = ctx.comments.filter(function (comment) {
+      return EdisonQuery.noteText(comment && comment.body);
+    });
+    if (stage === 'needs-input' && visibleNotes.length) {
+      var ask = EdisonCard.excerpt(EdisonQuery.noteText(visibleNotes[visibleNotes.length - 1].body));
       if (ask) html += '<div class="ask"><p class="meta">The agent asked</p><p class="quote">' + esc(ask) + '</p></div>';
     }
     if (stage === 'review') {
-      var shown = ctx.pulls.filter(function (pr) { return pr.state === 'open'; });
-      if (!shown.length) shown = ctx.pulls.slice(0, 1);
+      var shown = shownPulls(ctx.pulls);
       shown.forEach(function (pr, index) {
         html += '<div class="pr-panel"><p class="meta">Pull request</p><h2>' + externalLink(pr.html_url, pr.title) + '</h2>';
         if (index === 0) html += '<div data-review hidden></div>';
@@ -282,26 +331,27 @@ var EdisonTicket = (function () {
     }
     var canEditNotes = !agentDeployed(issue, ctx.comments);
     html += '<div class="block-title"><h2>Notes</h2></div><ol class="notes">';
-    if (!ctx.comments.length) html += '<li class="hint">No notes yet.</li>';
-    ctx.comments.forEach(function (comment) {
+    if (!visibleNotes.length) html += '<li class="hint">No notes yet.</li>';
+    visibleNotes.forEach(function (comment) {
       var who = comment.user && comment.user.login ? comment.user.login : 'note';
       var editingThis = canEditNotes && session.editingComment && String(session.editingComment) === String(comment.id);
+      var text = EdisonQuery.noteText(comment.body);
       html += '<li' + (comment.id ? ' data-comment="' + esc(comment.id) + '"' : '') + '>';
       if (editingThis) {
         html += '<form id="note-edit-form" class="stack">';
-        html += '<label class="field">Note<textarea name="note">' + esc(comment.body || '') + '</textarea></label>';
+        html += '<label class="field">Note<textarea name="note">' + esc(text) + '</textarea></label>';
         html += '<button type="submit" class="primary">Save</button>';
         html += '<button type="button" class="quiet" data-action="cancel-note">Cancel</button></form>';
       } else {
         html += '<div class="note-head"><p class="meta">' + esc(who) + ' \u00b7 ' + esc(EdisonFormat.timeAgo(comment.created_at)) + '</p>';
         if (canEditNotes && comment.id) html += '<button type="button" class="text" data-action="edit-note" data-id="' + esc(comment.id) + '">Edit</button>';
-        html += '</div><div class="prose">' + EdisonFormat.renderMarkdown(comment.body || '') + '</div>';
+        html += '</div><div class="prose">' + EdisonFormat.renderMarkdown(text) + '</div>';
       }
       html += '</li>';
     });
     html += '</ol>';
     html += '<form id="note-form" class="stack">';
-    html += '<label class="field">Add a note<textarea name="note" placeholder="Reply, or add something the agent should know"></textarea></label>';
+    html += '<label class="field">Add a note<textarea name="note" placeholder="Add a note. This does not start the agent."></textarea></label>';
     if (session.noteError) html += '<p class="inline-error" role="alert">' + esc(session.noteError) + '</p>';
     html += '<button type="submit" class="primary">Add note</button></form>';
     html += '</div></div>' + actionBar(ctx) + '</article>';
@@ -608,8 +658,7 @@ var EdisonTicket = (function () {
   }
 
   function loadChecks(ctx) {
-    var pulls = ctx.pulls.filter(function (pr) { return pr.state === 'open'; });
-    if (!pulls.length) pulls = ctx.pulls.slice(0, 1);
+    var pulls = shownPulls(ctx.pulls);
     if (stageName(ctx.issue) !== 'review') return;
     pulls.forEach(function (pr, index) {
       var sha = '';
@@ -686,15 +735,26 @@ var EdisonTicket = (function () {
     });
   }
 
+  function noteDraft(el) {
+    var field = el.querySelector('#note-form textarea');
+    return field ? String(field.value || '').trim() : '';
+  }
+
   function switchOn(el, repo, issue, button) {
+    var existing = el._ctx && openPull(el._ctx.pulls);
+    if (existing) {
+      continuePull(el, repo, issue, button, existing);
+      return;
+    }
     button.disabled = true;
     EdisonSetup.rulesStatus(repo).then(function (status) {
-      if (!status || status.state !== 'merged') {
+      if (!rulesReady(status)) {
         BriefMessage.show('Merge the agent rules before Deploy Agent.', button, { durationMs: 2800, multiline: true });
         return mount(el, repo, issue.number);
       }
       return EdisonAgents.current().then(function (agent) {
-        return EdisonApi.createComment(repo, issue.number, EdisonAgents.commentBody(agent, repo, issue));
+        var body = EdisonAgents.commentBody(agent, repo, issue) + '\n\n' + EdisonQuery.deployMarker();
+        return EdisonApi.createComment(repo, issue.number, body);
       }).then(function () {
         return EdisonApi.updateIssue(repo, issue.number, {
           labels: EdisonLabels.replaceStage(issue.labels, 'working')
@@ -706,6 +766,67 @@ var EdisonTicket = (function () {
     }).catch(function (error) {
       button.disabled = false;
       BriefMessage.show(error.message, button, { durationMs: 2800, multiline: true });
+    });
+  }
+
+  function continuePull(el, repo, issue, button, pr) {
+    var draft = noteDraft(el);
+    var notes = EdisonQuery.pendingNotes(el._ctx.comments, draft);
+    if (!notes.length) {
+      BriefMessage.show('Write a note first.', button);
+      return;
+    }
+    button.disabled = true;
+    var mentioned = false;
+    EdisonSetup.rulesStatus(repo).then(function (status) {
+      if (!rulesReady(status)) {
+        BriefMessage.show('Merge the agent rules before Deploy Agent.', button, { durationMs: 2800, multiline: true });
+        return mount(el, repo, issue.number);
+      }
+      return EdisonApi.pull(repo, pr.number).then(function (full) {
+        var sha = full && full.head && full.head.sha || '';
+        var branch = full && full.head && full.head.ref || '';
+        if (!branch) throw new Error('Could not read the pull request branch.');
+        var posted = draft ? EdisonApi.createComment(repo, issue.number, draft) : Promise.resolve();
+        return posted.then(function () {
+          return EdisonAgents.current();
+        }).then(function (agent) {
+          return EdisonApi.createComment(repo, pr.number, EdisonQuery.followUpComment({
+            mention: agent.mention,
+            notes: notes,
+            pr: pr.number,
+            branch: branch,
+            issue: issue.number,
+            title: issue.title,
+            repo: repo,
+            owner: EDISON_CONFIG.OWNER
+          }));
+        }).then(function () {
+          mentioned = true;
+          return EdisonApi.createComment(repo, issue.number, EdisonQuery.deployMarker(pr.number, sha)).catch(function () {
+            return null;
+          });
+        }).then(function () {
+          return EdisonApi.updateIssue(repo, issue.number, {
+            labels: EdisonLabels.replaceStage(issue.labels, 'working')
+          });
+        }).then(function () {
+          BriefMessage.show('Agent sent', button);
+          return mount(el, repo, issue.number);
+        });
+      });
+    }).catch(function (error) {
+      var recover = mentioned
+        ? EdisonApi.updateIssue(repo, issue.number, {
+          labels: EdisonLabels.replaceStage(issue.labels, 'working')
+        }).catch(function () { return null; }).then(function () {
+          return mount(el, repo, issue.number);
+        })
+        : (draft ? mount(el, repo, issue.number) : Promise.resolve());
+      return recover.then(function () {
+        if (!mentioned && !draft && button) button.disabled = false;
+        BriefMessage.show(error.message, button || el, { durationMs: 2800, multiline: true });
+      });
     });
   }
 
