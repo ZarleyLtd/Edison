@@ -40,11 +40,12 @@ var EdisonTicket = (function () {
 
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape' || !active || active.token !== generation) return;
-    if (!active.session.sheet && !active.session.confirmClose && !active.session.editingComment) return;
+    if (!active.session.sheet && !active.session.confirmClose && !active.session.confirmMerge && !active.session.editingComment) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     active.session.sheet = null;
     active.session.confirmClose = false;
+    active.session.confirmMerge = false;
     active.session.editingComment = null;
     active.draw();
   });
@@ -103,7 +104,7 @@ var EdisonTicket = (function () {
           return mount(el, repo, issue.number);
         });
       }
-      var session = { editing: false, confirmClose: false, sheet: null, noteError: '', editingComment: null };
+      var session = { editing: false, confirmClose: false, confirmMerge: false, checks: null, mergeable: null, sheet: null, noteError: '', editingComment: null };
       var ctx = {
         el: el,
         repo: repo,
@@ -162,6 +163,7 @@ var EdisonTicket = (function () {
     var isNew = EdisonLabels.isNewApp(issue.labels);
     var rules = ctx.rules;
     var session = ctx.session;
+    if (session.confirmMerge) return mergeConfirm(ctx);
     if (session.confirmClose) {
       return '<div class="action-bar"><p class="hint">Close this ticket? It moves to Done.</p>' +
         '<button type="button" class="danger" data-action="close-yes">Close ticket</button>' +
@@ -197,12 +199,19 @@ var EdisonTicket = (function () {
       primary = '<button type="button" class="primary" data-action="send">Deploy Agent</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'working') {
-      hint = 'The agent is working. It will stop at a pull request. Edison does not merge it.';
+      hint = 'The agent is working. It stops at a pull request.';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
     } else if (stage === 'review') {
-      var pr = openPull(ctx.pulls) || ctx.pulls[0];
-      hint = 'Merge on GitHub. Close this ticket when you are finished.';
-      if (pr) link = externalLink(pr.html_url, 'Open pull request');
+      var pr = openPull(ctx.pulls);
+      if (pr) {
+        hint = 'Review the page, then merge. Close this ticket when you are finished.';
+        primary = '<button type="button" class="primary" data-action="merge-ask">Merge PR</button>';
+        link = externalLink(pr.html_url, 'Open pull request');
+      } else if (ctx.pulls.length) {
+        hint = 'The pull request is merged. Close this ticket when you are finished.';
+      } else {
+        hint = 'Close this ticket when you are finished.';
+      }
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close ticket</button>';
     } else {
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close</button>';
@@ -418,11 +427,21 @@ var EdisonTicket = (function () {
     var action = button.getAttribute('data-action');
     var session = ctx.session;
     if (action === 'close-ask') {
+      session.confirmMerge = false;
       session.confirmClose = true;
       ctx.draw();
     } else if (action === 'close-no') {
       session.confirmClose = false;
       ctx.draw();
+    } else if (action === 'merge-ask') {
+      session.confirmClose = false;
+      session.confirmMerge = true;
+      ctx.draw();
+    } else if (action === 'merge-no') {
+      session.confirmMerge = false;
+      ctx.draw();
+    } else if (action === 'merge-yes') {
+      mergePullRequest(ctx, button);
     } else if (action === 'close-yes') {
       setState(ctx.el, ctx.repo, ctx.issue, 'closed', button);
     } else if (action === 'reopen') {
@@ -553,6 +572,41 @@ var EdisonTicket = (function () {
     });
   }
 
+  function mergeConfirm(ctx) {
+    var failed = ctx.session.checks && ctx.session.checks.failed;
+    var hint = 'Merge this pull request? The live site updates after GitHub Pages deploys. The ticket stays open until you close it.';
+    var button = '<button type="button" class="primary" data-action="merge-yes">Merge PR</button>';
+    if (ctx.session.mergeable === false) {
+      hint = 'GitHub cannot merge this pull request yet.';
+      button = '';
+    } else if (failed) {
+      hint = failed + (failed === 1 ? ' check has' : ' checks have') + ' failed. Merge this pull request anyway? The ticket stays open until you close it.';
+      button = '<button type="button" class="danger" data-action="merge-yes">Merge anyway</button>';
+    }
+    return '<div class="action-bar"><p class="hint">' + esc(hint) + '</p>' + button +
+      '<button type="button" class="quiet" data-action="merge-no">Don\u2019t merge</button></div>';
+  }
+
+  function mergePullRequest(ctx, button) {
+    var pr = openPull(ctx.pulls);
+    if (!pr) {
+      ctx.session.confirmMerge = false;
+      ctx.draw();
+      return;
+    }
+    if (button) button.disabled = true;
+    EdisonApi.mergePull(ctx.repo, pr.number).then(function () {
+      pr.state = 'closed';
+      ctx.session.confirmMerge = false;
+      ctx.session.confirmClose = true;
+      BriefMessage.show('Pull request merged', button || ctx.el);
+      ctx.draw();
+    }).catch(function (error) {
+      if (button) button.disabled = false;
+      BriefMessage.show(error.message, button || ctx.el, { durationMs: 2800, multiline: true });
+    });
+  }
+
   function loadChecks(ctx) {
     var pulls = ctx.pulls.filter(function (pr) { return pr.state === 'open'; });
     if (!pulls.length) pulls = ctx.pulls.slice(0, 1);
@@ -561,6 +615,7 @@ var EdisonTicket = (function () {
       var sha = '';
       EdisonApi.request('/repos/' + EDISON_CONFIG.OWNER + '/' + encodeURIComponent(ctx.repo) + '/pulls/' + pr.number).then(function (full) {
         sha = full.head && full.head.sha;
+        if (index === 0) ctx.session.mergeable = full.mergeable;
         if (!sha) return null;
         return Promise.all([
           settled(EdisonApi.checkRuns(ctx.repo, sha)),
@@ -571,16 +626,19 @@ var EdisonTicket = (function () {
         if (!parts || ctx.token !== generation) return;
         var slot = ctx.el.querySelector('[data-checks="' + index + '"]');
         var runs = (parts[0] && parts[0].check_runs) || [];
+        var failed = runs.filter(function (run) { return run.conclusion === 'failure'; }).length;
         if (slot) {
           if (!runs.length) slot.textContent = 'No checks yet';
           else {
-            var failed = runs.filter(function (run) { return run.conclusion === 'failure'; }).length;
             slot.textContent = failed
               ? failed + ' check' + (failed === 1 ? '' : 's') + ' failed'
               : runs.length + ' check' + (runs.length === 1 ? '' : 's') + ' passed';
           }
         }
-        if (index === 0 && parts[2] && parts[2].private === false) paintReviewLinks(ctx, sha, parts[1]);
+        if (index === 0) {
+          ctx.session.checks = { failed: failed, total: runs.length };
+          if (parts[2] && parts[2].private === false) paintReviewLinks(ctx, sha, parts[1]);
+        }
       }).catch(function () {});
     });
   }

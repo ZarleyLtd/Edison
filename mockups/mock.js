@@ -136,6 +136,7 @@
     notice: '',
     workingOpen: false,
     confirmClose: false,
+    confirmMerge: false,
     editing: false,
     noteError: '',
     draftLinks: [],
@@ -324,21 +325,31 @@
       return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close', note: 'Answer above, then tap Deploy Agent. That posts ' + vendorMention() + ' again.' };
     }
     if (ticket.stage === 'working') {
-      return { quiet: 'Close', note: 'The agent is working. It will stop at a pull request. Edison does not merge it.' };
+      return { quiet: 'Close', note: 'The agent is working. It stops at a pull request.' };
     }
     if (ticket.stage === 'review') {
+      if (ticket.pr && ticket.pr.state === 'merged') {
+        return { quiet: 'Close ticket', note: 'The pull request is merged. Close this ticket when you are finished.' };
+      }
       return {
+        primary: 'Merge PR',
+        primaryAction: 'merge-ask',
         link: ticket.pr ? ticket.pr.url : 'https://github.com/ZarleyLtd',
         linkLabel: 'Open pull request',
         external: true,
         quiet: 'Close ticket',
-        note: 'Merge on GitHub. Close this ticket when you are finished.'
+        note: 'Review the page, then merge. Close this ticket when you are finished.'
       };
     }
     return { quiet: 'Close', note: '' };
   }
 
   function actionBar(ticket) {
+    if (state.confirmMerge) {
+      return '<div class="action-bar"><p class="hint">Merge this pull request? The live site updates after GitHub Pages deploys. The ticket stays open until you close it.</p>' +
+        '<button type="button" class="primary" data-action="merge-yes">Merge PR</button>' +
+        '<button type="button" class="quiet" data-action="merge-no">Don\u2019t merge</button></div>';
+    }
     if (state.confirmClose) {
       return '<div class="action-bar"><p class="hint">Close this ticket? It moves to Done.</p>' +
         '<button type="button" class="danger" data-action="close-yes">Close ticket</button>' +
@@ -380,6 +391,7 @@
     if (state.paintedId !== id) {
       y = 0;
       state.confirmClose = false;
+      state.confirmMerge = false;
       state.editing = false;
       state.noteError = '';
     }
@@ -639,6 +651,7 @@
   function render() {
     if (screen() !== 'ticket') {
       state.confirmClose = false;
+      state.confirmMerge = false;
       state.editing = false;
       state.noteError = '';
     }
@@ -748,7 +761,24 @@
     if (!ticket && action !== 'save-token' && action !== 'clear-token' && action !== 'save-agent' && action !== 'start-rules') return;
     if (action === 'mark-ready') markReady(ticket);
     if (action === 'switch-on') switchOn(ticket);
+    if (action === 'merge-ask') {
+      state.confirmClose = false;
+      state.confirmMerge = true;
+      paintDetail();
+    }
+    if (action === 'merge-no') {
+      state.confirmMerge = false;
+      paintDetail();
+    }
+    if (action === 'merge-yes') {
+      if (ticket.pr) ticket.pr.state = 'merged';
+      state.confirmMerge = false;
+      state.confirmClose = true;
+      state.notice = 'Pull request merged.';
+      paintDetail();
+    }
     if (action === 'close-ask') {
+      state.confirmMerge = false;
       state.confirmClose = true;
       paintDetail();
     }
@@ -976,8 +1006,9 @@
         state.query = '';
         document.getElementById('search').value = '';
         render();
-      } else if (state.confirmClose) {
+      } else if (state.confirmClose || state.confirmMerge) {
         state.confirmClose = false;
+        state.confirmMerge = false;
         paintDetail();
       }
       return;

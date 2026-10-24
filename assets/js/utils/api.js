@@ -224,6 +224,13 @@ var EdisonApi = (function () {
     });
   }
 
+  function mergePull(repo, number) {
+    return request(repoPath(repo, '/pulls/' + number + '/merge'), {
+      method: 'PUT',
+      body: JSON.stringify({ merge_method: 'squash' })
+    });
+  }
+
   function checkRuns(repo, sha) {
     return request(repoPath(repo, '/commits/' + sha + '/check-runs?per_page=20'));
   }
@@ -258,6 +265,7 @@ var EdisonApi = (function () {
     branchSha: branchSha,
     openPulls: openPulls,
     createPull: createPull,
+    mergePull: mergePull,
     checkRuns: checkRuns,
     searchPulls: searchPulls
   };

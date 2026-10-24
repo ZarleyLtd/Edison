@@ -26,4 +26,4 @@ The preview in `mockups/` is a first pass: dim for Inbox, brighter for Ready, a 
 ## Out of scope
 
 - No Supabase and no accounts beyond one GitHub token stored on the device.
-- Edison does not merge pull requests.
+- The agent does not merge pull requests. After you review, Merge PR on the ticket merges it. Closing the ticket is still how you mark it done.
