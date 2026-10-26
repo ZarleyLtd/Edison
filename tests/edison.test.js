@@ -48,6 +48,31 @@ test('pull request query and mention check', function () {
   assert.equal(query.mentionsIssue('See #120 for context', 12), false);
 });
 
+test('a ticket photo stays on one same-repo pull request', function () {
+  assert.equal(query.photoBranch(12), 'edison-ticket-12');
+  assert.equal(query.photoPullTitle(12), 'Edison ticket #12');
+  assert.equal(query.mentionsIssue(query.photoPullBody(12), 12), true);
+  assert.doesNotMatch(query.photoPullBody(12), /\b(fix(?:es|ed)?|clos(?:e|es|ed)|resolv(?:e|es|ed))\s+#/i);
+  assert.equal(
+    query.photoFileUrl('ZarleyLtd', 'BGS', 'abc123', 'attachments/BGS/2/1.jpg'),
+    'https://raw.githubusercontent.com/ZarleyLtd/BGS/abc123/attachments/BGS/2/1.jpg'
+  );
+  const linked = '![shot](https://raw.githubusercontent.com/ZarleyLtd/BGS/abc123/attachments/BGS/2/1.jpg)';
+  assert.equal(
+    query.retargetPhotoUrls(linked, 'ZarleyLtd', 'BGS', 'main'),
+    '![shot](https://raw.githubusercontent.com/ZarleyLtd/BGS/main/attachments/BGS/2/1.jpg)'
+  );
+  assert.equal(query.retargetPhotoUrls(linked.replace('abc123', 'main'), 'ZarleyLtd', 'BGS', 'main'), linked.replace('abc123', 'main'));
+  const pulls = [
+    { number: 3, state: 'open', created_at: '2026-02-01T00:00:00Z', title: 'Other', body: 'nope', head: { ref: 'a', repo: { full_name: 'ZarleyLtd/BGS' } } },
+    { number: 4, state: 'open', created_at: '2026-01-01T00:00:00Z', title: 'Edison ticket #2', body: '#2', head: { ref: 'edison-ticket-2', repo: { full_name: 'ZarleyLtd/BGS' } } },
+    { number: 5, state: 'open', created_at: '2026-03-01T00:00:00Z', title: 'later', body: 'see #2', head: { ref: 'cursor/x', repo: { full_name: 'ZarleyLtd/BGS' } } },
+    { number: 6, state: 'open', created_at: '2025-01-01T00:00:00Z', title: '#2', body: '#2', head: { ref: 'fork', repo: { full_name: 'other/BGS' } } },
+    { number: 7, state: 'closed', created_at: '2024-01-01T00:00:00Z', title: '#2', body: '#2', head: { ref: 'old', repo: { full_name: 'ZarleyLtd/BGS' } } }
+  ];
+  assert.equal(query.ticketPulls(pulls, 'ZarleyLtd', 'BGS', 2)[0].number, 4);
+});
+
 test('review link points at the unmerged commit', function () {
   const url = query.previewPageUrl('ZarleyLtd', 'HelloWorldCursor', 'abc123', 'index.html');
   assert.equal(url, 'https://htmlpreview.github.io/?https://raw.githubusercontent.com/ZarleyLtd/HelloWorldCursor/abc123/index.html');

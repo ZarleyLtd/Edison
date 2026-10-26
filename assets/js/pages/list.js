@@ -456,6 +456,8 @@ var EdisonList = (function () {
 
   function uploadPhotos(repo, issue, files) {
     var chain = Promise.resolve(issue.body || '');
+    var hold = {};
+    var isNew = EdisonLabels.isNewApp(issue.labels);
     files.forEach(function (file, index) {
       chain = chain.then(function (body) {
         setProgress(0.4 + (0.55 * (index / files.length)), 'Adding photo ' + (index + 1) + ' of ' + files.length);
@@ -463,10 +465,8 @@ var EdisonList = (function () {
           return ImageCompress.blobToBase64(blob);
         }).then(function (base64) {
           var path = 'attachments/' + repo + '/' + issue.number + '/' + Date.now() + '-' + index + '.jpg';
-          return EdisonApi.putContents(EDISON_CONFIG.REPO, path, 'Attach photo to ' + repo + '#' + issue.number, base64).then(function (saved) {
-            var url = (saved.content && saved.content.download_url) ||
-              ('https://raw.githubusercontent.com/' + EDISON_CONFIG.OWNER + '/' + EDISON_CONFIG.REPO + '/main/' + path);
-            return body + '\n\n![' + (file.name || 'photo') + '](' + url + ')';
+          return EdisonApi.storeTicketPhoto(repo, issue.number, path, base64, 'Attach photo to ' + repo + '#' + issue.number, hold, isNew).then(function (saved) {
+            return body + '\n\n![' + (file.name || 'photo') + '](' + saved.url + ')';
           });
         });
       });

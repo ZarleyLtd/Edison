@@ -261,12 +261,114 @@ var EdisonApi = (function () {
     return request(repoPath(repo, '/commits/' + sha + '/check-runs?per_page=20'));
   }
 
+  function listOpenPulls(repo) {
+    return request(repoPath(repo, '/pulls?state=open&per_page=100'));
+  }
+
+  function refExists(error) {
+    return !!(error && /reference already exists|already exists/i.test(error.message || ''));
+  }
+
+  function photoResult(repo, saved, branch, path) {
+    var sha = (saved.commit && saved.commit.sha) || branch || 'main';
+    var direct = !branch && saved.content && saved.content.download_url;
+    return { url: direct || EdisonQuery.photoFileUrl(owner(), repo, sha, path), branch: branch || '' };
+  }
+
+  function openTicketPull(repo, number, branch, base) {
+    return createPull(repo, {
+      title: EdisonQuery.photoPullTitle(number),
+      head: branch,
+      base: base,
+      body: EdisonQuery.photoPullBody(number)
+    }).catch(function (error) {
+      if (refExists(error)) return null;
+      throw error;
+    });
+  }
+
+  function storeTicketPhoto(repo, number, path, base64, message, hold, isNew) {
+    if (isNew) {
+      return putContents(repo, path, message, base64).then(function (saved) {
+        return photoResult(repo, saved, '', path);
+      });
+    }
+    if (hold && hold.branch) {
+      return putContents(repo, path, message, base64, hold.branch).then(function (saved) {
+        return photoResult(repo, saved, hold.branch, path);
+      });
+    }
+    return listOpenPulls(repo).then(function (pulls) {
+      var existing = EdisonQuery.ticketPulls(pulls, owner(), repo, number)[0];
+      if (existing && existing.head && existing.head.ref) {
+        if (hold) hold.branch = existing.head.ref;
+        return putContents(repo, path, message, base64, existing.head.ref).then(function (saved) {
+          return photoResult(repo, saved, existing.head.ref, path);
+        });
+      }
+      return repoMeta(repo).then(function (meta) {
+        var base = (meta && meta.default_branch) || 'main';
+        var branch = EdisonQuery.photoBranch(number);
+        return branchSha(repo, base).then(function (sha) {
+          return createBranch(repo, branch, sha).catch(function (error) {
+            if (refExists(error)) return null;
+            throw error;
+          });
+        }).then(function () {
+          return putContents(repo, path, message, base64, branch);
+        }).then(function (saved) {
+          if (hold) hold.branch = branch;
+          return openTicketPull(repo, number, branch, base).then(function () {
+            return photoResult(repo, saved, branch, path);
+          });
+        });
+      });
+    });
+  }
+
+  function keepHead(repo, branch) {
+    return branchSha(repo, branch).then(function (sha) {
+      return request(repoPath(repo, '/git/refs'), {
+        method: 'POST',
+        body: JSON.stringify({ ref: 'refs/tags/edison-kept/' + branch, sha: sha })
+      });
+    }).catch(function () {
+      return null;
+    });
+  }
+
+  function combinePulls(groups) {
+    var seen = {};
+    var out = [];
+    groups.forEach(function (group) {
+      (group || []).forEach(function (item) {
+        if (!item || seen[item.number]) return;
+        seen[item.number] = true;
+        out.push(item);
+      });
+    });
+    return out;
+  }
+
   function searchPulls(repo, number) {
     var query = EdisonQuery.buildPrQuery(owner(), repo, number);
-    return request('/search/issues?per_page=20&q=' + encodeURIComponent(query)).then(function (result) {
+    var searched = request('/search/issues?per_page=20&q=' + encodeURIComponent(query)).then(function (result) {
       return (result.items || []).filter(function (item) {
         if (!item.pull_request) return false;
         return EdisonQuery.mentionsIssue((item.title || '') + '\n' + (item.body || ''), number);
+      });
+    });
+    var listed = listOpenPulls(repo).then(function (pulls) {
+      return EdisonQuery.ticketPulls(pulls, owner(), repo, number);
+    }).catch(function () { return []; });
+    return searched.then(function (found) {
+      return listed.then(function (open) {
+        return combinePulls([found, open]);
+      });
+    }, function (error) {
+      return listed.then(function (open) {
+        if (open.length) return open;
+        throw error;
       });
     });
   }
@@ -296,6 +398,8 @@ var EdisonApi = (function () {
     mergePull: mergePull,
     closePull: closePull,
     deleteBranch: deleteBranch,
+    keepHead: keepHead,
+    storeTicketPhoto: storeTicketPhoto,
     checkRuns: checkRuns,
     searchPulls: searchPulls
   };

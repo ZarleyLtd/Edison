@@ -7,7 +7,7 @@ Edison is a phone-first tracker for bugs, changes, features, queries, and new-ap
 - Static HTML, CSS, and JavaScript. No build step. GitHub Pages from `main`.
 - One issue per ticket, in the target app's repository. New-app ideas live in this repository with the `app:new` label until Create repo.
 - Labels carry type, stage, and priority. Closing the issue means done.
-- Photos are compressed in the browser and committed under `attachments/` in this repository.
+- Photos are compressed in the browser. On an existing app they are committed to that ticket's pull request, and later photos and agent work continue on it. They reach the default branch only when that pull request is merged. A new-app idea has no repository yet, so its photos are committed under `attachments/` in this repository.
 - The agent is selected in Settings (`agents.json`): `@cursor` now, `@claude` when you copy `templates/claude.yml` into an app.
 - A website cannot create `C:\CursorSites\<Name>`. Create repo does the GitHub work and shows the clone command. `tools/clone-new-app.ps1` runs that clone on the PC.
 

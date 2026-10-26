@@ -436,20 +436,20 @@ var EdisonTicket = (function () {
     paintNoteAttachments(ctx);
   }
 
-  function uploadNotePhotos(repo, number, files, button) {
+  function uploadNotePhotos(repo, issue, files, button) {
     var markdown = '';
     var chain = Promise.resolve();
+    var hold = {};
+    var isNew = EdisonLabels.isNewApp(issue.labels);
     files.forEach(function (file, index) {
       chain = chain.then(function () {
         if (button) button.textContent = 'Adding photo ' + (index + 1) + ' of ' + files.length;
         return ImageCompress.compressToTarget(file, 100 * 1024).then(function (blob) {
           return ImageCompress.blobToBase64(blob);
         }).then(function (base64) {
-          var path = 'attachments/' + repo + '/' + number + '/' + Date.now() + '-' + index + '.jpg';
-          return EdisonApi.putContents(EDISON_CONFIG.REPO, path, 'Attach photo to ' + repo + '#' + number, base64).then(function (saved) {
-            var url = (saved.content && saved.content.download_url) ||
-              ('https://raw.githubusercontent.com/' + EDISON_CONFIG.OWNER + '/' + EDISON_CONFIG.REPO + '/main/' + path);
-            markdown += (markdown ? '\n\n' : '') + '![' + (file.name || 'photo') + '](' + url + ')';
+          var path = 'attachments/' + repo + '/' + issue.number + '/' + Date.now() + '-' + index + '.jpg';
+          return EdisonApi.storeTicketPhoto(repo, issue.number, path, base64, 'Attach photo to ' + repo + '#' + issue.number, hold, isNew).then(function (saved) {
+            markdown += (markdown ? '\n\n' : '') + '![' + (file.name || 'photo') + '](' + saved.url + ')';
           });
         });
       });
@@ -757,7 +757,7 @@ var EdisonTicket = (function () {
       button.disabled = true;
       button.textContent = files.length ? 'Adding photo 1 of ' + files.length : 'Adding\u2026';
     }
-    uploadNotePhotos(ctx.repo, ctx.issue.number, files, button).then(function (images) {
+    uploadNotePhotos(ctx.repo, ctx.issue, files, button).then(function (images) {
       var parts = [];
       if (note) parts.push(note);
       if (links.length) parts.push(links.join('\n'));
@@ -912,7 +912,9 @@ var EdisonTicket = (function () {
           return EdisonApi.closePull(repo, pr.number).then(function () {
             var branch = EdisonQuery.discardBranch(full, EDISON_CONFIG.OWNER, repo);
             if (!branch) return null;
-            return EdisonApi.deleteBranch(repo, branch);
+            return EdisonApi.keepHead(repo, branch).then(function () {
+              return EdisonApi.deleteBranch(repo, branch);
+            });
           });
         });
       });
@@ -947,6 +949,28 @@ var EdisonTicket = (function () {
     );
   }
 
+  function retargetTicketPhotos(ctx, toRef) {
+    var owner = EDISON_CONFIG.OWNER;
+    var repo = ctx.repo;
+    var issue = ctx.issue;
+    var chain = Promise.resolve();
+    var nextBody = EdisonQuery.retargetPhotoUrls(issue.body, owner, repo, toRef);
+    if (nextBody !== (issue.body || '')) {
+      chain = chain.then(function () {
+        return EdisonApi.updateIssue(repo, issue.number, { body: nextBody }).catch(function () { return null; });
+      });
+    }
+    (ctx.comments || []).forEach(function (comment) {
+      if (!comment || !comment.id) return;
+      var next = EdisonQuery.retargetPhotoUrls(comment.body, owner, repo, toRef);
+      if (next === (comment.body || '')) return;
+      chain = chain.then(function () {
+        return EdisonApi.updateComment(repo, comment.id, next).catch(function () { return null; });
+      });
+    });
+    return chain;
+  }
+
   function mergePullRequest(ctx, button) {
     var pr = openPull(ctx.pulls);
     if (!pr) {
@@ -955,7 +979,12 @@ var EdisonTicket = (function () {
       return;
     }
     if (button) button.disabled = true;
-    EdisonApi.mergePull(ctx.repo, pr.number).then(function () {
+    EdisonApi.pull(ctx.repo, pr.number).then(function (full) {
+      return EdisonApi.mergePull(ctx.repo, pr.number).then(function () {
+        var toRef = (full && full.base && full.base.ref) || 'main';
+        return retargetTicketPhotos(ctx, toRef);
+      });
+    }).then(function () {
       pr.state = 'closed';
       ctx.session.confirmMerge = false;
       ctx.session.confirmClose = true;
@@ -1106,7 +1135,7 @@ var EdisonTicket = (function () {
   function continuePull(el, repo, issue, button, pr) {
     var draft = noteDraft(el);
     var notes = EdisonQuery.pendingNotes(el._ctx.comments, draft);
-    if (!notes.length) {
+    if (!notes.length && EdisonQuery.latestDeploy(el._ctx.comments)) {
       BriefMessage.show('Write a note first.', button);
       return;
     }

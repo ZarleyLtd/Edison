@@ -39,6 +39,54 @@
     return re.test(String(text || ''));
   }
 
+  function photoBranch(number) {
+    return 'edison-ticket-' + number;
+  }
+
+  function photoPullTitle(number) {
+    return 'Edison ticket #' + number;
+  }
+
+  function photoPullBody(number) {
+    return 'Photos and later agent work for this ticket stay on this pull request.\n\n#' + number;
+  }
+
+  function photoFileUrl(owner, repo, ref, path) {
+    var encodedRef = String(ref || '').split('/').filter(Boolean).map(function (part) {
+      return encodeURIComponent(part);
+    }).join('/');
+    var encodedPath = String(path || '').split('/').filter(Boolean).map(function (part) {
+      return encodeURIComponent(part);
+    }).join('/');
+    return 'https://raw.githubusercontent.com/' +
+      encodeURIComponent(owner) + '/' +
+      encodeURIComponent(repo) + '/' +
+      encodedRef + '/' +
+      encodedPath;
+  }
+
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function retargetPhotoUrls(text, owner, repo, toRef) {
+    var prefix = 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/';
+    var pattern = new RegExp(escapeRegExp(prefix) + '([^\\s)]+?)/attachments/', 'g');
+    return String(text || '').replace(pattern, function (match, ref) {
+      if (ref === toRef) return match;
+      return prefix + toRef + '/attachments/';
+    });
+  }
+
+  function ticketPulls(pulls, owner, repo, number) {
+    var expected = (String(owner || '') + '/' + String(repo || '')).toLowerCase();
+    return openPullsByAge((pulls || []).filter(function (pr) {
+      var full = pr && pr.head && pr.head.repo && pr.head.repo.full_name;
+      if (!full || full.toLowerCase() !== expected || !pr.head.ref) return false;
+      return mentionsIssue((pr.title || '') + '\n' + (pr.body || ''), number);
+    }));
+  }
+
   function suggestRepoName(title) {
     var words = String(title || '')
       .replace(/[^A-Za-z0-9]+/g, ' ')
@@ -216,18 +264,23 @@
       '',
       'Continue from the commits already on branch `' + (opts.branch || '') + '` of pull request #' + opts.pr + '.',
       'Do not open another pull request.',
-      'Act on every note below, oldest first.',
       '',
       'Edison ticket: ' + (opts.title || ''),
       'Repository: ' + (opts.owner || 'ZarleyLtd') + '/' + (opts.repo || ''),
       'Issue: #' + opts.issue,
-      '',
-      'Notes since the last round:'
+      ''
     ];
-    notes.forEach(function (note, index) {
+    if (!notes.length) {
+      lines.push('No new notes. Read the issue and the commits already on this pull request.');
+    } else {
+      lines.push('Act on every note below, oldest first.');
       lines.push('');
-      lines.push((index + 1) + '. ' + note);
-    });
+      lines.push('Notes since the last round:');
+      notes.forEach(function (note, index) {
+        lines.push('');
+        lines.push((index + 1) + '. ' + note);
+      });
+    }
     lines.push('');
     lines.push('Comment a short summary of what you changed and how to review it.');
     lines.push('When this round is on the pull request, add the label stage:review and remove stage:working, including when no code change was needed.');
@@ -254,6 +307,12 @@
     buildIssueQuery: buildIssueQuery,
     buildPrQuery: buildPrQuery,
     mentionsIssue: mentionsIssue,
+    photoBranch: photoBranch,
+    photoPullTitle: photoPullTitle,
+    photoPullBody: photoPullBody,
+    photoFileUrl: photoFileUrl,
+    retargetPhotoUrls: retargetPhotoUrls,
+    ticketPulls: ticketPulls,
     previewPageUrl: previewPageUrl,
     previewPages: previewPages,
     suggestRepoName: suggestRepoName,
