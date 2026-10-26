@@ -190,6 +190,17 @@
     return openPullsByAge(pulls)[0] || null;
   }
 
+  function discardBranch(pull, owner, repo) {
+    var head = pull && pull.head;
+    if (!head || !head.ref) return '';
+    var baseRef = pull.base && pull.base.ref;
+    if (baseRef && head.ref === baseRef) return '';
+    var fullName = head.repo && head.repo.full_name;
+    var expected = String(owner || '') + '/' + String(repo || '');
+    if (!fullName || fullName.toLowerCase() !== expected.toLowerCase()) return '';
+    return head.ref;
+  }
+
   function roundLanded(comments, headSha) {
     var latest = latestDeploy(comments);
     if (!latest || !latest.sha) return true;
@@ -257,6 +268,7 @@
     withAgentUpdates: withAgentUpdates,
     openPullsByAge: openPullsByAge,
     oldestOpenPull: oldestOpenPull,
+    discardBranch: discardBranch,
     roundLanded: roundLanded,
     followUpComment: followUpComment,
     insertApp: insertApp

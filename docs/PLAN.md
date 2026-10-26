@@ -1,6 +1,6 @@
 # Edison development plan
 
-Edison is a phone-first tracker for bugs, changes, features, and new-app ideas. Tickets are GitHub Issues. A background coding agent works only after you tap Deploy Agent, and it stops at a pull request.
+Edison is a phone-first tracker for bugs, changes, features, queries, and new-app ideas. Tickets are GitHub Issues. A background coding agent works only after you tap Deploy Agent, and it stops at a pull request.
 
 ## Decisions
 

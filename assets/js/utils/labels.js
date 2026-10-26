@@ -10,6 +10,7 @@
     { name: 'type:change', color: 'fbca04', description: 'Change to something that exists' },
     { name: 'type:feature', color: '0e8a16', description: 'New feature' },
     { name: 'type:idea', color: 'c5def5', description: 'Idea' },
+    { name: 'type:query', color: '6f42c1', description: 'A question, usually with no site change' },
     { name: 'stage:inbox', color: 'ededed', description: 'Captured, not ready for an agent' },
     { name: 'stage:ready', color: 'fef2c0', description: 'Ready for an agent' },
     { name: 'stage:working', color: 'f9d0c4', description: 'Agent is working' },
@@ -23,7 +24,7 @@
   ];
 
   var STAGES = ['inbox', 'ready', 'working', 'needs-input', 'review', 'parked'];
-  var TYPES = ['bug', 'change', 'feature', 'idea'];
+  var TYPES = ['bug', 'change', 'feature', 'idea', 'query'];
   var PRIORITIES = ['p1', 'p2', 'p3'];
 
   var STAGE_LABEL = {
@@ -40,7 +41,8 @@
     bug: 'Bug',
     change: 'Change',
     feature: 'Feature',
-    idea: 'Idea'
+    idea: 'Idea',
+    query: 'Query'
   };
 
   function names(labels) {

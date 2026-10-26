@@ -10,6 +10,8 @@
   --danger: #8f2d2d;
   --amber: #e39b12;
   --shadow: 0 16px 50px rgba(28, 25, 22, 0.16);
+  --external: #1f883d;
+  --external-line: #1a7f37;
   color-scheme: light;
 }
 
@@ -346,6 +348,45 @@ h1, h2, .row-title { overflow-wrap: anywhere; }
 
 .ticket h1 { font-size: 1.7rem; }
 
+.ticket-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.ticket-links a.quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--external-line);
+  border-radius: 12px;
+  background: var(--external);
+  color: #fff;
+  font-size: 0.9rem;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.note-compose { display: flex; flex-direction: column; gap: 0.45rem; }
+.note-tools { display: flex; align-items: center; gap: 0.15rem; }
+.note-tools button.icon-btn {
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+}
+.note-tools button.icon-btn svg { width: 1.4rem; height: 1.4rem; }
+.note-tools button.primary { width: auto; margin-left: auto; min-height: 36px; }
+
 .action-bar {
   position: fixed;
   z-index: 8;
@@ -353,19 +394,75 @@ h1, h2, .row-title { overflow-wrap: anywhere; }
   right: 0;
   bottom: 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-  background: rgba(243, 240, 234, 0.96);
-  border-top: 1px solid var(--line);
+  background: var(--paper);
+  border-top: 1px solid #8a7e70;
 }
+
+.action-bar .hint { flex: 1 0 100%; margin: 0; font-size: 0.85rem; }
 
 .action-bar .primary,
 .action-bar .secondary,
 .action-bar .quiet,
-.action-bar .danger { width: 100%; }
+.action-bar .danger {
+  width: auto;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
 
-.action-bar .hint { margin: 0; font-size: 0.85rem; }
+.confirm-actions button {
+  width: auto;
+  flex: 0 1 auto;
+  min-height: 36px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(28, 25, 22, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.confirm-dialog {
+  width: min(24rem, 100%);
+  background: var(--paper);
+  border-radius: 16px;
+  padding: 1.15rem 1.1rem 1rem;
+  box-shadow: var(--shadow);
+}
+
+.confirm-dialog h2 { margin: 0 0 0.45rem; font-size: 1.15rem; }
+
+.confirm-dialog p { margin: 0; }
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
 
 .prose {
   font-family: Georgia, "Iowan Old Style", serif;
@@ -385,14 +482,34 @@ h1, h2, .row-title { overflow-wrap: anywhere; }
 
 .block-title h2 { font-size: 0.95rem; margin: 0; }
 
-.notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: stretch; gap: 0.7rem; }
 
 .notes li {
+  max-width: 85%;
+  align-self: flex-start;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
+  border-radius: 16px 16px 16px 4px;
+  padding: 0.7rem 0.8rem;
 }
+
+.notes li.note-mine {
+  align-self: flex-end;
+  background: #f4e3c0;
+  border-color: #e4cf9e;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.notes li.hint {
+  align-self: stretch;
+  max-width: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.notes li .prose p:last-child { margin-bottom: 0; }
 
 .ask {
   margin: 1rem 0;
@@ -506,7 +623,15 @@ code, .clone {
   gap: 0.5rem;
 }
 
-.sheet-actions { display: flex; flex-direction: column; gap: 0.35rem; }
+.sheet-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sheet-actions button { width: auto; flex: 0 1 auto; }
 
 .settings { padding: 1rem 1rem 3rem; max-width: 38rem; }
 

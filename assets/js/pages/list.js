@@ -295,7 +295,8 @@ var EdisonList = (function () {
       { value: 'bug', label: 'Bug' },
       { value: 'change', label: 'Change' },
       { value: 'feature', label: 'Feature' },
-      { value: 'idea', label: 'Idea' }
+      { value: 'idea', label: 'Idea' },
+      { value: 'query', label: 'Query' }
     ];
   }
 

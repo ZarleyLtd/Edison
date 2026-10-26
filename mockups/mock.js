@@ -15,7 +15,8 @@
     bug: 'Bug',
     change: 'Change',
     feature: 'Feature',
-    idea: 'Idea'
+    idea: 'Idea',
+    query: 'Query'
   };
 
   var APPS = [
@@ -310,28 +311,28 @@
       return { primary: 'Reopen', primaryAction: 'reopen', note: 'This ticket is done. Reopen puts it back in the inbox.' };
     }
     if (ticket.isNew) {
-      return { primary: 'Create repository', primaryAction: 'open-create', quiet: 'Close', note: 'Creates the GitHub repository and a first ticket. Cloning onto this PC is a separate step.' };
+      return { primary: 'Create repository', primaryAction: 'open-create', quiet: 'Close ticket', note: 'Creates the GitHub repository and a first ticket. Cloning onto this PC is a separate step.' };
     }
     if (ticket.stage === 'inbox' || ticket.stage === 'parked') {
-      return { primary: 'Mark ready', primaryAction: 'mark-ready', quiet: 'Close', note: 'Marking ready does not start the agent. Deploy Agent does that.' };
+      return { primary: 'Mark ready', primaryAction: 'mark-ready', quiet: 'Close ticket', note: 'Marking ready does not start the agent. Deploy Agent does that.' };
     }
     if ((ticket.stage === 'ready' || ticket.stage === 'needs-input') && ticket.rules !== 'merged') {
-      return { link: '#/settings', linkLabel: 'Settings', quiet: 'Close', note: 'Deploy Agent waits until the agent rules are on the default branch. Start the rules pull request in Settings.' };
+      return { link: '#/settings', linkLabel: 'Settings', quiet: 'Close ticket', note: 'Deploy Agent waits until the agent rules are on the default branch. Start the rules pull request in Settings.' };
     }
     if (ticket.stage === 'ready') {
-      return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close', note: 'Posts ' + vendorMention() + ' on the GitHub issue and moves this to Working. The agent stops at a pull request.' };
+      return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close ticket', note: 'Posts ' + vendorMention() + ' on the GitHub issue and moves this to Working. The agent stops at a pull request.' };
     }
     if (ticket.stage === 'needs-input') {
       if (ticket.pr && ticket.pr.state !== 'merged') {
-        return { primary: 'Deploy Agent', primaryAction: 'send-followup', quiet: 'Close', note: 'Notes wait until you tap Deploy Agent. That continues this pull request and includes every note since the last round.' };
+        return { primary: 'Deploy Agent', primaryAction: 'send-followup', quiet: 'Close ticket', note: 'Notes wait until you tap Deploy Agent. That continues this pull request and includes every note since the last round.' };
       }
-      return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close', note: 'Answer above, then tap Deploy Agent. That posts ' + vendorMention() + ' again.' };
+      return { primary: 'Deploy Agent', primaryAction: 'switch-on', quiet: 'Close ticket', note: 'Answer above, then tap Deploy Agent. That posts ' + vendorMention() + ' again.' };
     }
     if (ticket.stage === 'working') {
       if (ticket.pr && ticket.pr.state !== 'merged') {
-        return { quiet: 'Close', note: 'The agent is updating this pull request. A note saved now is included the next time you send.' };
+        return { quiet: 'Close ticket', note: 'The agent is updating this pull request. A note saved now is included the next time you send.' };
       }
-      return { quiet: 'Close', note: 'The agent is working. It stops at a pull request.' };
+      return { quiet: 'Close ticket', note: 'The agent is working. It stops at a pull request.' };
     }
     if (ticket.stage === 'review') {
       if (ticket.pr && ticket.pr.state === 'merged') {
@@ -346,22 +347,37 @@
         linkLabel: 'Open pull request',
         external: true,
         quiet: 'Close ticket',
-        note: 'Add notes for what should change. Send to agent continues this pull request and picks them up. Merge when you want this version live.'
+        note: 'Add notes for what should change. Send to agent continues this pull request and picks them up. Merge when you want this version live. Close ticket closes the pull request without merging.'
       };
     }
-    return { quiet: 'Close', note: '' };
+    return { quiet: 'Close ticket', note: '' };
+  }
+
+  function confirmDialog(title, hint, actions) {
+    return '<div class="backdrop confirm-backdrop"><div class="confirm-dialog" role="dialog" aria-modal="true">' +
+      '<h2>' + esc(title) + '</h2><p>' + esc(hint) + '</p><div class="confirm-actions">' + actions + '</div></div></div>';
   }
 
   function actionBar(ticket) {
+    var dialog = '';
     if (state.confirmMerge) {
-      return '<div class="action-bar"><p class="hint">Merge this pull request? The live site updates after GitHub Pages deploys. The ticket stays open until you close it.</p>' +
+      dialog = confirmDialog(
+        'Merge pull request',
+        'Merge this pull request? The live site updates after GitHub Pages deploys. The ticket stays open until you close it.',
         '<button type="button" class="primary" data-action="merge-yes">Merge PR</button>' +
-        '<button type="button" class="quiet" data-action="merge-no">Don\u2019t merge</button></div>';
-    }
-    if (state.confirmClose) {
-      return '<div class="action-bar"><p class="hint">Close this ticket? It moves to Done.</p>' +
-        '<button type="button" class="danger" data-action="close-yes">Close ticket</button>' +
-        '<button type="button" class="quiet" data-action="close-no">Keep it open</button></div>';
+          '<button type="button" class="quiet" data-action="merge-no">Don\u2019t merge</button>'
+      );
+    } else if (state.confirmClose) {
+      var openPr = ticket && ticket.stage === 'review' && ticket.pr && ticket.pr.state !== 'merged';
+      var closeHint = openPr
+        ? 'Close this ticket without merging? The pull request will be closed, its branch deleted, and the ticket moves to Done.'
+        : 'Close this ticket? It moves to Done.';
+      dialog = confirmDialog(
+        'Close ticket',
+        closeHint,
+        '<button type="button" class="primary" data-action="close-yes">Close ticket</button>' +
+          '<button type="button" class="quiet" data-action="close-no">Keep it open</button>'
+      );
     }
     var spec = actions(ticket);
     var html = '<div class="action-bar">';
@@ -374,7 +390,7 @@
         : '<a href="' + esc(spec.link) + '">' + esc(spec.linkLabel) + '</a>';
     }
     if (spec.quiet) html += '<button type="button" class="quiet" data-action="close-ask">' + esc(spec.quiet) + '</button>';
-    html += '</div>';
+    html += '</div>' + dialog;
     return html;
   }
 
@@ -412,19 +428,20 @@
       html += '<form id="edit-form" class="stack">';
       html += '<label class="field">Title<input name="title" required value="' + esc(ticket.title) + '" /></label>';
       html += '<label class="field">Description<textarea name="body">' + esc(ticket.body) + '</textarea></label>';
-      html += '<button type="submit" class="primary">Save</button>';
-      html += '<button type="button" class="quiet" data-action="cancel-edit">Cancel</button></form>';
+      html += '<div class="sheet-actions"><button type="submit" class="primary">Save</button>';
+      html += '<button type="button" class="quiet" data-action="cancel-edit">Cancel</button></div></form>';
     } else {
       html += '<div class="ticket-title">' + bulb(ticket.stage, 'lg') + '<h1>' + esc(ticket.title) + '</h1></div>';
     }
     html += actionBar(ticket);
-    html += '<p class="meta"><button type="button" class="text" data-action="open-details">Type, priority, stage</button>';
-    html += ' · ' + externalLink('https://github.com/ZarleyLtd/' + encodeURIComponent(ticket.app === 'New app' ? 'Edison' : ticket.app) + '/issues/' + ticket.n, '#' + ticket.n + ' on GitHub') + '</p>';
+    html += '<p class="meta"><button type="button" class="text" data-action="open-details">Type, priority, stage</button></p>';
+    html += '<div class="ticket-links">';
+    html += '<a class="quiet" href="https://github.com/ZarleyLtd/' + encodeURIComponent(ticket.app === 'New app' ? 'Edison' : ticket.app) + '/issues/' + ticket.n + '" target="_blank" rel="noopener noreferrer">#' + esc(ticket.n) + ' on GitHub</a>';
+    if (ticket.pr) html += '<a class="quiet" href="' + esc(ticket.pr.url) + '" target="_blank" rel="noopener noreferrer">Pull request</a>';
+    if (ticket.pr && ticket.stage === 'review') html += '<a class="quiet" href="' + esc(ticket.pr.url) + '" target="_blank" rel="noopener noreferrer">Review page</a>';
+    html += '</div>';
     if (ticket.ask && ticket.stage === 'needs-input') {
       html += '<div class="ask"><p class="meta">The agent asked</p><p class="quote">' + esc(ticket.ask) + '</p></div>';
-    }
-    if (ticket.pr && ticket.stage === 'review') {
-      html += '<div class="pr-panel"><p class="meta">Pull request</p><h2>' + externalLink(ticket.pr.url, ticket.pr.title) + '</h2><p class="ok">' + esc(ticket.pr.checks) + '</p></div>';
     }
     if (ticket.repoReady) {
       html += '<div class="pr-panel"><p class="ok">Repository ready</p><p>On this PC:</p><code class="clone">' + esc(ticket.clone) + '</code>';
@@ -438,13 +455,16 @@
     html += '<div class="block-title"><h2>Notes</h2></div><ol class="notes">';
     if (!ticket.notes.length) html += '<li class="hint">No notes yet.</li>';
     ticket.notes.forEach(function (note) {
-      html += '<li><p class="meta">' + esc(note.who) + ' · ' + esc(note.when) + '</p><div class="prose">' + paragraphs(note.text) + '</div></li>';
+      var mine = note.who === 'you';
+      html += '<li class="' + (mine ? 'note-mine' : 'note-other') + '"><p class="meta">' + esc(note.who) + ' · ' + esc(note.when) + '</p><div class="prose">' + paragraphs(note.text) + '</div></li>';
     });
     html += '</ol>';
-    html += '<form id="note-form" class="stack">';
+    html += '<form id="note-form" class="note-compose">';
     html += '<label class="field">Add a note<textarea name="note" placeholder="Add a note. This does not start the agent."></textarea></label>';
-    if (state.noteError) html += '<p class="inline-error" role="alert">' + esc(state.noteError) + '</p>';
-    html += '<button type="submit" class="primary">Add note</button></form>';
+    html += '<div class="note-tools">';
+    html += '<button type="button" class="icon-btn" data-action="mock-link" aria-label="Add a link"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M21.44 11.05l-8.49 8.49a5.5 5.5 0 0 1-7.78-7.78l8.49-8.48a3.5 3.5 0 0 1 4.95 4.95l-8.49 8.48a1.5 1.5 0 0 1-2.12-2.12l7.78-7.78"/></svg></button>';
+    html += '<button type="button" class="icon-btn" data-action="mock-photo" aria-label="Add a photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.2 4.5l1.1 1.8h3.4l1.1-1.8H19a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h4.2zM12 9.2A3.8 3.8 0 1 0 15.8 13 3.8 3.8 0 0 0 12 9.2z"/></svg></button>';
+    html += '<button type="submit" class="primary">Add note</button></div></form>';
     html += '</article>';
     pane.innerHTML = html;
     pane.scrollTop = y;
@@ -522,7 +542,8 @@
       { value: 'bug', label: 'Bug' },
       { value: 'change', label: 'Change' },
       { value: 'feature', label: 'Feature' },
-      { value: 'idea', label: 'Idea' }
+      { value: 'idea', label: 'Idea' },
+      { value: 'query', label: 'Query' }
     ], newDraft.type) + '</div>';
     html += '<div class="field">Priority' + segment('priority', [
       { value: 'p1', label: 'P1' },
@@ -560,7 +581,8 @@
       { value: 'bug', label: 'Bug' },
       { value: 'change', label: 'Change' },
       { value: 'feature', label: 'Feature' },
-      { value: 'idea', label: 'Idea' }
+      { value: 'idea', label: 'Idea' },
+      { value: 'query', label: 'Query' }
     ], state.filters.type) + '</div>';
     html += '<div class="field">Priority' + segment('filter-priority', [
       { value: '', label: 'Any' },
@@ -586,7 +608,8 @@
       { value: 'bug', label: 'Bug' },
       { value: 'change', label: 'Change' },
       { value: 'feature', label: 'Feature' },
-      { value: 'idea', label: 'Idea' }
+      { value: 'idea', label: 'Idea' },
+      { value: 'query', label: 'Query' }
     ], ticket.type) + '</div>';
     html += '<div class="field">Priority' + segment('detail-priority', [
       { value: 'p1', label: 'P1' },
@@ -707,6 +730,12 @@
   }
 
   document.body.addEventListener('click', function (event) {
+    if (event.target.classList && event.target.classList.contains('confirm-backdrop')) {
+      state.confirmClose = false;
+      state.confirmMerge = false;
+      paintDetail();
+      return;
+    }
     var button = event.target.closest('[data-segment]');
     if (button) {
       var group = button.parentNode;

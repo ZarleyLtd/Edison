@@ -356,6 +356,10 @@ a.rules-open {
   --danger: #8f2d2d;
   --amber: #e39b12;
   --shadow: 0 16px 50px rgba(28, 25, 22, 0.16);
+  --section-line: #8a7e70;
+  --note-mine: #f4e3c0;
+  --external: #1f883d;
+  --external-line: #1a7f37;
   background: var(--bg);
   color: var(--ink);
   font-family: "Segoe UI", system-ui, sans-serif;
@@ -628,6 +632,8 @@ body[data-page="list"] .list-pane .meta {
   border-radius: 12px;
   font-weight: 650;
   min-height: 48px;
+  justify-content: center;
+  text-align: center;
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) button.secondary {
@@ -679,6 +685,47 @@ body[data-page="list"] .list-pane .meta {
   justify-content: center;
 }
 
+:is(body[data-page="list"], body[data-page="ticket"]) .backdrop.confirm-backdrop {
+  align-items: center;
+  padding: 1rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .confirm-dialog {
+  width: min(24rem, 100%);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 16px;
+  padding: 1.15rem 1.1rem 1rem;
+  box-shadow: var(--shadow);
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .confirm-dialog h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1.15rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .confirm-dialog p { margin: 0; }
+
+:is(body[data-page="list"], body[data-page="ticket"]) .confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .confirm-actions button {
+  width: auto;
+  flex: 0 1 auto;
+  min-height: 36px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 :is(body[data-page="list"], body[data-page="ticket"]) .sheet {
   width: min(34rem, 100%);
   background: var(--bg);
@@ -695,7 +742,18 @@ body[data-page="list"] .list-pane .meta {
   letter-spacing: -0.03em;
 }
 
-:is(body[data-page="list"], body[data-page="ticket"]) .sheet-actions { display: flex; flex-direction: column; gap: 0.35rem; }
+:is(body[data-page="list"], body[data-page="ticket"]) .sheet-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .sheet-actions button {
+  width: auto;
+  flex: 0 1 auto;
+}
 
 :is(body[data-page="list"], body[data-page="ticket"]) .chips li {
   display: inline-flex;
@@ -835,13 +893,67 @@ body[data-page="list"] .list-pane .meta {
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .ticket-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
   margin-top: 0.85rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .ticket-links a.quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--external-line);
+  border-radius: 12px;
+  background: var(--external);
+  color: #fff;
+  font-size: 0.9rem;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .ticket-links [data-review] {
+  display: contents;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .ticket-links [data-review][hidden] {
+  display: none;
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .action-bar {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .action-bar .hint {
+  flex: 1 0 100%;
+  margin: 0;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .action-bar .primary,
+:is(body[data-page="list"], body[data-page="ticket"]) .action-bar .secondary,
+:is(body[data-page="list"], body[data-page="ticket"]) .action-bar .quiet,
+:is(body[data-page="list"], body[data-page="ticket"]) .action-bar .danger {
+  width: auto;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .action-bar a {
@@ -879,22 +991,108 @@ body[data-page="list"] .list-pane .meta {
 
 :is(body[data-page="list"], body[data-page="ticket"]) .ticket .prose p { margin: 0 0 0.8rem; }
 
+:is(body[data-page="list"], body[data-page="ticket"]) .note-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-tools button.icon-btn {
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  flex: none;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-tools button.icon-btn svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-tools button.icon-btn[aria-expanded="true"] {
+  background: var(--wash);
+  color: var(--ink);
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-tools button.primary {
+  width: auto;
+  margin-left: auto;
+  min-height: 36px;
+  padding: 0.2rem 0.75rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-link-row input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .note-link-row button.quiet {
+  width: auto;
+  flex: none;
+  min-height: 36px;
+  padding: 0.2rem 0.7rem;
+}
+
 :is(body[data-page="list"], body[data-page="ticket"]) .notes {
   list-style: none;
   margin: 0 0 1.15rem;
   padding: 0 0 1.15rem;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 0.7rem;
   border-bottom: 1px solid var(--line);
 }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .notes li {
+  max-width: 85%;
+  align-self: flex-start;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
+  border-radius: 16px 16px 16px 4px;
+  padding: 0.7rem 0.8rem;
 }
+
+:is(body[data-page="list"], body[data-page="ticket"]) .notes li.note-mine {
+  align-self: flex-end;
+  background: var(--note-mine);
+  border-color: #e4cf9e;
+  border-radius: 16px 16px 4px 16px;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .notes li.note-editing {
+  align-self: stretch;
+  max-width: none;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .notes li.hint {
+  align-self: stretch;
+  max-width: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+:is(body[data-page="list"], body[data-page="ticket"]) .notes li .prose p:last-child { margin-bottom: 0; }
 
 :is(body[data-page="list"], body[data-page="ticket"]) .note-head {
   display: flex;
@@ -1004,14 +1202,14 @@ body[data-page="list"] .list-pane .meta {
     flex: none;
     margin: 0;
     padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-    background: rgba(243, 240, 234, 0.96);
-    border-top: 1px solid var(--line);
+    background: var(--paper);
+    border-top: 1px solid var(--section-line);
   }
 
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .primary,
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .secondary,
   :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .quiet,
-  :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .danger { width: 100%; }
+  :is(body[data-page="list"][data-screen="ticket"], body[data-page="ticket"]) .action-bar .danger { width: auto; }
 }
 
 @media (min-width: 1100px) {

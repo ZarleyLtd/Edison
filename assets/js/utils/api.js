@@ -235,6 +235,28 @@ var EdisonApi = (function () {
     });
   }
 
+  function closePull(repo, number) {
+    return request(repoPath(repo, '/pulls/' + number), {
+      method: 'PATCH',
+      body: JSON.stringify({ state: 'closed' })
+    });
+  }
+
+  function missingRef(error) {
+    if (!error) return false;
+    if (error.status === 404) return true;
+    return error.status === 422 && /reference does not exist|not found/i.test(error.message || '');
+  }
+
+  function deleteBranch(repo, branch) {
+    return request(repoPath(repo, '/git/refs/heads/' + encodeURIComponent(branch)), {
+      method: 'DELETE'
+    }).catch(function (error) {
+      if (missingRef(error)) return null;
+      throw error;
+    });
+  }
+
   function checkRuns(repo, sha) {
     return request(repoPath(repo, '/commits/' + sha + '/check-runs?per_page=20'));
   }
@@ -272,6 +294,8 @@ var EdisonApi = (function () {
     openPulls: openPulls,
     createPull: createPull,
     mergePull: mergePull,
+    closePull: closePull,
+    deleteBranch: deleteBranch,
     checkRuns: checkRuns,
     searchPulls: searchPulls
   };

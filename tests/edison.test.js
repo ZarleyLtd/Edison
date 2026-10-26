@@ -15,6 +15,13 @@ test('new-app label is detected from issue labels', function () {
   assert.equal(labels.isNewApp(['edison', 'type:bug']), false);
 });
 
+test('query is an allowed type', function () {
+  assert.ok(labels.TYPES.includes('query'));
+  assert.equal(labels.TYPE_LABEL.query, 'Query');
+  assert.equal(labels.ALL.some(function (label) { return label.name === 'type:query'; }), true);
+  assert.deepEqual(labels.replaceType(['edison', 'type:idea'], 'query').sort(), ['edison', 'type:query']);
+});
+
 test('priority replacement keeps a single priority', function () {
   assert.deepEqual(labels.replacePriority(['p1', 'edison'], 'p3').sort(), ['edison', 'p3']);
 });
@@ -80,6 +87,20 @@ test('a follow-up waits for a new commit and then catches up on later notes', fu
     { number: 9, state: 'closed', created_at: '2025-01-01T00:00:00Z' }
   ];
   assert.equal(query.oldestOpenPull(pulls).number, 18);
+  const sameRepo = {
+    head: { ref: 'cursor/beaverstown-pars-report-c258', repo: { full_name: 'ZarleyLtd/BGS' } },
+    base: { ref: 'main' }
+  };
+  assert.equal(query.discardBranch(sameRepo, 'ZarleyLtd', 'BGS'), 'cursor/beaverstown-pars-report-c258');
+  assert.equal(query.discardBranch({
+    head: { ref: 'main', repo: { full_name: 'ZarleyLtd/BGS' } },
+    base: { ref: 'main' }
+  }, 'ZarleyLtd', 'BGS'), '');
+  assert.equal(query.discardBranch({
+    head: { ref: 'topic', repo: { full_name: 'other/BGS' } },
+    base: { ref: 'main' }
+  }, 'ZarleyLtd', 'BGS'), '');
+  assert.equal(query.discardBranch({ head: { ref: 'topic' }, base: { ref: 'main' } }, 'ZarleyLtd', 'BGS'), '');
   const comment = query.followUpComment({
     mention: '@cursor',
     notes: ['Make the button larger', 'And the empty state'],
