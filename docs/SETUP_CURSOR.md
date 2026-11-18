@@ -9,4 +9,4 @@ Edison posts an `@cursor` comment on the GitHub issue when you tap Deploy Agent.
 5. File a ticket, mark it ready, and tap **Deploy Agent**.
 6. The agent opens a pull request. Review it in Edison or on GitHub. Merge it yourself. Nothing goes live until that merge and GitHub Pages deploys.
 
-Switching to Claude later is a Settings change plus copying `templates/claude.yml` into the app as `.github/workflows/claude.yml`, with a `CLAUDE_CODE_OAUTH_TOKEN` secret. The same Deploy Agent button then comments `@claude`.
+To switch to Claude instead, see [SETUP_CLAUDE.md](SETUP_CLAUDE.md).

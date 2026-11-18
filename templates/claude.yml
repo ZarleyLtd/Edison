@@ -1,10 +1,11 @@
-# Edison starts Claude by commenting @claude on an issue.
-# The edison label is applied when a ticket is first filed, so this
-# workflow does not trigger on that label (it would start work before
-# you tap Deploy Agent). Copy this file to .github/workflows/claude.yml
-# in an app, and set the CLAUDE_CODE_OAUTH_TOKEN secret, before
-# switching Edison to Claude.
-name: Claude Code
+# edison-claude-workflow v2
+# Edison starts Claude by commenting @claude: Deploy Agent comments on the
+# issue, and later notes are sent as a comment on the ticket's pull request.
+# Edison adds this file to an app as .github/workflows/claude.yml through
+# Settings -> Agent setup. The app also needs a CLAUDE_CODE_OAUTH_TOKEN
+# repository secret (see tools/set-claude-secret.ps1 in the Edison repo).
+# The first line is the marker Edison checks; bump it when this file changes.
+name: Claude Code (Edison)
 
 on:
   issue_comment:
@@ -16,25 +17,62 @@ permissions:
   issues: write
   id-token: write
 
+concurrency:
+  group: claude-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   claude:
-    if: contains(github.event.comment.body, '@claude')
+    # Only Edison's own comments, and only from people with write access.
+    if: >-
+      startsWith(github.event.comment.body, '@claude') &&
+      contains(github.event.comment.body, 'Edison ticket:') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          trigger_phrase: "@claude"
           prompt: |
-            Read this Edison issue, including comments and linked attachments.
-            If a pull request for this issue is already open, continue from
-            the commits on that branch. Do not open another pull request.
-            Act on every note left since the last round, oldest first.
-            Otherwise implement the change on a new branch and open a pull
-            request that references the issue. Do not merge. Comment a short
-            summary of what changed and how to review it. When this round is
-            on the pull request, add the label stage:review and remove
-            stage:working, including when no code change was needed. If you
-            are blocked, comment the question and add the label
-            stage:needs-input (and remove stage:working).
+            REPO: ${{ github.repository }}
+            COMMENTED ON: #${{ github.event.issue.number }} (${{ github.event.issue.pull_request && 'a pull request' || 'an issue' }})
+
+            You are working an Edison ticket. Edison is the owner's ticket
+            tracker. Follow the repository's CLAUDE.md. The comment that
+            started this run is between the markers; the Edison issue number
+            is on its "Issue: #" line.
+
+            ----- comment -----
+            ${{ github.event.comment.body }}
+            ----- end comment -----
+
+            How to work it:
+            1. Read the Edison issue and all its comments with
+               `gh issue view <issue> --comments`. Open linked screenshots or
+               attachments when they matter.
+            2. If the comment was on a pull request, or an open pull request
+               for the issue already exists
+               (`gh pr list --state open --search "<issue> in:body"`), check
+               out that pull request's branch with `gh pr checkout`, continue
+               from its commits, and act on every note in the comment, oldest
+               first. Do not open another pull request.
+            3. Otherwise create a branch named `edison/issue-<issue>`, make the
+               change, push it, and open a pull request with `gh pr create`
+               whose body contains `Fixes #<issue>`.
+            4. Never merge, close, or force-push.
+            5. Comment a short summary of what changed and how to review it
+               on the issue with `gh issue comment <issue>`.
+            6. When this round is on the pull request, run
+               `gh issue edit <issue> --add-label stage:review --remove-label stage:working`,
+               including when no code change was needed.
+            7. If you are blocked or need a decision, comment the question on
+               the issue and run
+               `gh issue edit <issue> --add-label stage:needs-input --remove-label stage:working`.
+          claude_args: |
+            --allowedTools "Read,Write,Edit,Glob,Grep,WebFetch,Bash(git:*),Bash(gh issue:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr create:*),Bash(gh pr checkout:*),Bash(gh pr comment:*)"
+            --disallowedTools "Bash(gh pr merge:*),Bash(gh issue close:*),Bash(git push --force:*),Bash(git push -f:*)"

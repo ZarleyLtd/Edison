@@ -1,4 +1,4 @@
-var CACHE = 'edison-shell-v3';
+var CACHE = 'edison-shell-v4';
 var SHELL = [
   './',
   './index.html',

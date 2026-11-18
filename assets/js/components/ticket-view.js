@@ -113,7 +113,7 @@ var EdisonTicket = (function () {
       EdisonApi.searchPulls(repo, number),
       EdisonApps.load(),
       EdisonSetup.rulesStatus(repo).catch(function (error) {
-        return { state: 'error', message: error && error.message ? error.message : 'Could not check the agent rules.' };
+        return { state: 'error', message: error && error.message ? error.message : 'Could not check the agent setup.' };
       })
     ]).then(function (parts) {
       if (token !== generation) return;
@@ -233,8 +233,8 @@ var EdisonTicket = (function () {
       primary = '<button type="button" class="primary" data-action="ready">Mark ready</button>';
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close ticket</button>';
     } else if ((stage === 'ready' || stage === 'needs-input') && !rulesReady(rules)) {
-      hint = 'Deploy Agent waits until the agent rules are on the default branch.';
-      if (rules && rules.state === 'open' && rules.pull && rules.pull.html_url) link = externalLink(rules.pull.html_url, 'Open rules pull request');
+      hint = 'Deploy Agent waits until the agent setup is on the default branch.';
+      if (rules && rules.state === 'open' && rules.pull && rules.pull.html_url) link = externalLink(rules.pull.html_url, 'Open setup pull request');
       else link = '<a href="settings.html">Settings</a>';
       if (rules && rules.state === 'error' && rules.message) hint = rules.message;
       quiet = '<button type="button" class="quiet" data-action="close-ask">Close ticket</button>';
@@ -1112,7 +1112,7 @@ var EdisonTicket = (function () {
     button.disabled = true;
     EdisonSetup.rulesStatus(repo).then(function (status) {
       if (!rulesReady(status)) {
-        BriefMessage.show('Merge the agent rules before Deploy Agent.', button, { durationMs: 2800, multiline: true });
+        BriefMessage.show('Merge the agent setup pull request before Deploy Agent.', button, { durationMs: 2800, multiline: true });
         return mount(el, repo, issue.number);
       }
       return EdisonAgents.current().then(function (agent) {
@@ -1143,7 +1143,7 @@ var EdisonTicket = (function () {
     var mentioned = false;
     EdisonSetup.rulesStatus(repo).then(function (status) {
       if (!rulesReady(status)) {
-        BriefMessage.show('Merge the agent rules before Deploy Agent.', button, { durationMs: 2800, multiline: true });
+        BriefMessage.show('Merge the agent setup pull request before Deploy Agent.', button, { durationMs: 2800, multiline: true });
         return mount(el, repo, issue.number);
       }
       return EdisonApi.pull(repo, pr.number).then(function (full) {
