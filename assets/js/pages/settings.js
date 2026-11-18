@@ -91,8 +91,8 @@ var EdisonSettings = (function () {
       status.textContent = 'Saving…';
       EdisonAgents.saveVendor(id).then(function () {
         status.textContent = id === 'claude'
-          ? 'Saved. Claude is selected. Copy templates/claude.yml into an app before Deploy Agent will run there.'
-          : 'Saved. Cursor is selected. Deploy Agent comments @cursor.';
+          ? 'Saved. Claude is selected. Reload this page, then merge each app’s setup pull request before Deploy Agent will run there.'
+          : 'Saved. Cursor is selected. Deploy Agent comments @cursor. Reload this page to see each app’s rules.';
         BriefMessage.show('Agent saved', button, { durationMs: 2200 });
       }).catch(function (error) {
         status.textContent = error.message;
@@ -131,28 +131,28 @@ var EdisonSettings = (function () {
         return;
       }
       if (status.state === 'signed-out') {
-        slot.appendChild(note('Add a token to check rules.'));
+        slot.appendChild(note('Add a token to check setup.'));
         return;
       }
       if (status.state === 'error') {
-        slot.appendChild(note(status.message || 'Could not check the rules.'));
+        slot.appendChild(note(status.message || 'Could not check the setup.'));
         return;
       }
       if (status.state === 'merged') {
         var done = document.createElement('span');
         done.className = 'rules-status';
-        done.textContent = '\u2713 Rules merged';
+        done.textContent = '\u2713 Ready';
         slot.appendChild(done);
         return;
       }
       if (status.state === 'stale') {
         var stale = document.createElement('span');
         stale.className = 'rules-status';
-        stale.textContent = 'Rules need an update';
+        stale.textContent = 'Needs an update';
         slot.appendChild(stale);
         var update = document.createElement('button');
         update.type = 'button';
-        update.textContent = 'Update rules';
+        update.textContent = 'Update';
         update.addEventListener('click', function () {
           update.disabled = true;
           EdisonSetup.proposeRules(app.repo).then(function (pr) {
@@ -179,7 +179,7 @@ var EdisonSettings = (function () {
       }
       var rules = document.createElement('button');
       rules.type = 'button';
-      rules.textContent = 'Rules PR';
+      rules.textContent = 'Setup PR';
       rules.addEventListener('click', function () {
         rules.disabled = true;
         EdisonSetup.proposeRules(app.repo).then(function (pr) {

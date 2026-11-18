@@ -40,7 +40,7 @@
     </section>
     <section class="stack">
       <h2>Agent</h2>
-      <p class="hint">Deploy Agent posts this vendor’s mention on the GitHub issue. Cursor is ready once the Cursor GitHub app can see the repository. Claude also needs <code>templates/claude.yml</code> copied into that app. See <a href="docs/SETUP_CURSOR.md">the Cursor setup notes</a>.</p>
+      <p class="hint">Deploy Agent posts this vendor’s mention on the GitHub issue. Cursor is ready once the Cursor GitHub app can see the repository. Claude needs the Claude GitHub app, a <code>CLAUDE_CODE_OAUTH_TOKEN</code> secret, and the Claude workflow on each app. See <a href="docs/SETUP_CLAUDE.md">the Claude setup notes</a> or <a href="docs/SETUP_CURSOR.md">the Cursor setup notes</a>.</p>
       <label class="field">Vendor
         <select id="vendor"></select>
       </label>
@@ -49,7 +49,7 @@
     </section>
     <section class="stack">
       <h2>Repositories</h2>
-      <p class="hint">A rules pull request adds the note Cursor agents read. Deploy Agent stays off until that file is merged. If the rules are already on the app, an update pull request keeps later rounds on the same pull request. Labels are added when you file a ticket.</p>
+      <p class="hint">A setup pull request adds what the selected agent needs: the rules file for Cursor, or the GitHub workflow for Claude. Deploy Agent stays off until that file is merged. If an older version is on the app, an update pull request brings it up to date. Labels are added when you file a ticket.</p>
       <div id="repos"></div>
     </section>
   </main>
