@@ -1,4 +1,4 @@
-# edison-claude-workflow v2
+# edison-claude-workflow v3
 # Edison starts Claude by commenting @claude: Deploy Agent comments on the
 # issue, and later notes are sent as a comment on the ticket's pull request.
 # Edison adds this file to an app as .github/workflows/claude.yml through
@@ -35,6 +35,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Rebuild the owner's C:\CursorSites layout around this checkout, so
+      # Claude reads the same shared rules and skills as a local session:
+      # ../cursor-sites-shared (specs, UI code, skills), ../CLAUDE.md (the
+      # shared rules), and the reference apps that the skills point at.
+      - name: Add shared CursorSites conventions
+        run: |
+          set -euo pipefail
+          root="$(dirname "$GITHUB_WORKSPACE")"
+          git clone --quiet --depth 1 https://github.com/ZarleyLtd/cursor-sites-shared.git "$root/cursor-sites-shared"
+          cp "$root/cursor-sites-shared/CLAUDE.md" "$root/CLAUDE.md"
+          skills="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
+          mkdir -p "$skills"
+          cp -R "$root/cursor-sites-shared/skills/." "$skills/"
+          clone_ref() {
+            if [ "$GITHUB_REPOSITORY" = "ZarleyLtd/$1" ] || [ -e "$root/$2" ]; then return 0; fi
+            git clone --quiet --depth 1 "https://github.com/ZarleyLtd/$1.git" "$root/$2" \
+              || echo "::warning::Could not clone reference app $1"
+          }
+          clone_ref FamilyTree FamilyTree
+          clone_ref ierne-snooker ierne-snooker
+          clone_ref Edison Edison
+          clone_ref CrossGunsSnooker PubliiCrossguns
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -46,6 +69,17 @@ jobs:
             tracker. Follow the repository's CLAUDE.md. The comment that
             started this run is between the markers; the Edison issue number
             is on its "Issue: #" line.
+
+            This repository sits in a CursorSites folder like the owner's
+            C:\CursorSites. ../CLAUDE.md holds the shared rules for every
+            app; read it before you start. ../cursor-sites-shared/ holds the
+            pattern specs, synced UI code and skills (also installed as
+            skills), and ../FamilyTree, ../ierne-snooker, ../Edison and
+            ../PubliiCrossguns are reference apps. When the ticket names a
+            shared pattern, use its skill. Everything outside this
+            repository is read-only: change and commit only this
+            repository, and if the ticket needs a change to shared code,
+            say so in your summary.
 
             ----- comment -----
             ${{ github.event.comment.body }}
@@ -74,5 +108,6 @@ jobs:
                the issue and run
                `gh issue edit <issue> --add-label stage:needs-input --remove-label stage:working`.
           claude_args: |
-            --allowedTools "Read,Write,Edit,Glob,Grep,WebFetch,Bash(git:*),Bash(gh issue:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr create:*),Bash(gh pr checkout:*),Bash(gh pr comment:*)"
+            --add-dir ${{ github.workspace }}/..
+            --allowedTools "Read,Write,Edit,Glob,Grep,WebFetch,Skill,Bash(git:*),Bash(gh issue:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr create:*),Bash(gh pr checkout:*),Bash(gh pr comment:*)"
             --disallowedTools "Bash(gh pr merge:*),Bash(gh issue close:*),Bash(git push --force:*),Bash(git push -f:*)"
