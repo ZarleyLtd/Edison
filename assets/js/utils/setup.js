@@ -17,7 +17,7 @@ var EdisonSetup = (function () {
       branch: 'edison-claude-setup',
       path: '.github/workflows/claude.yml',
       template: 'templates/claude.yml',
-      phrase: 'edison-claude-workflow v2',
+      phrase: 'edison-claude-workflow v3',
       addTitle: 'Add Claude workflow for Edison',
       updateTitle: 'Update Claude workflow for Edison',
       addBody: 'Adds `.github/workflows/claude.yml` so Deploy Agent in Edison (`@claude`) starts Claude Code on this repository. Claude opens a pull request for the ticket and continues on it when you send later notes.\n\nThe repository also needs a `CLAUDE_CODE_OAUTH_TOKEN` Actions secret.\n\nOpened from Edison.',

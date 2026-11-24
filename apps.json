@@ -73,6 +73,12 @@
     "localPath": "C:/CursorSites/ierne-snooker"
   },
   {
+    "name": "ierne-tennis",
+    "repo": "ierne-tennis",
+    "pagesUrl": "https://zarleyltd.github.io/ierne-tennis/",
+    "localPath": "C:/CursorSites/ierne-tennis"
+  },
+  {
     "name": "RNR",
     "repo": "RNR",
     "pagesUrl": "https://zarleyltd.github.io/RNR/",
