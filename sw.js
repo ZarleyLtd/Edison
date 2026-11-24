@@ -1,4 +1,4 @@
-var CACHE = 'edison-shell-v4';
+var CACHE = 'edison-shell-v5';
 var SHELL = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ var SHELL = [
   './agents.json',
   './assets/css/style.css',
   './assets/css/brief-message.css',
+  './assets/css/working-indicator.css',
   './assets/icons/icon.svg',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
@@ -20,6 +21,8 @@ var SHELL = [
   './assets/js/utils/formatters.js',
   './assets/js/utils/image-compress.js',
   './assets/js/utils/brief-message.js',
+  './assets/js/utils/working-indicator.js',
+  './assets/js/utils/ticket-changes.js',
   './assets/js/utils/apps.js',
   './assets/js/utils/agents.js',
   './assets/js/utils/setup.js',

@@ -136,6 +136,7 @@ var EdisonTicket = (function () {
       return promote.then(function (moved) {
         if (token !== generation) return;
         if (moved) return mount(el, repo, number);
+        EdisonChanges.record(issue);
       var session = { editing: false, confirmClose: false, confirmMerge: false, confirmEdit: false, editDraft: null, editChange: null, checks: null, mergeable: null, sheet: null, noteError: '', noteDraft: '', noteLinks: [], noteFiles: [], noteLinkOpen: false, editingComment: null, reviewLinks: '', reviewReady: false, reviewLoading: false };
       var ctx = {
         el: el,
@@ -923,9 +924,9 @@ var EdisonTicket = (function () {
 
   function closeTicket(ctx, button) {
     if (button) button.disabled = true;
-    closeOpenPulls(ctx.repo, ctx.pulls).then(function () {
+    WorkingIndicator.withWorking(closeOpenPulls(ctx.repo, ctx.pulls).then(function () {
       return setState(ctx.el, ctx.repo, ctx.issue, 'closed', button);
-    }).catch(function (error) {
+    }), 'Closing ticket…').catch(function (error) {
       if (button) button.disabled = false;
       BriefMessage.show(error.message, button || ctx.el, { durationMs: 2800, multiline: true });
     });
@@ -979,12 +980,12 @@ var EdisonTicket = (function () {
       return;
     }
     if (button) button.disabled = true;
-    EdisonApi.pull(ctx.repo, pr.number).then(function (full) {
+    WorkingIndicator.withWorking(EdisonApi.pull(ctx.repo, pr.number).then(function (full) {
       return EdisonApi.mergePull(ctx.repo, pr.number).then(function () {
         var toRef = (full && full.base && full.base.ref) || 'main';
         return retargetTicketPhotos(ctx, toRef);
       });
-    }).then(function () {
+    }), 'Merging pull request…').then(function () {
       pr.state = 'closed';
       ctx.session.confirmMerge = false;
       ctx.session.confirmClose = true;
@@ -1089,7 +1090,7 @@ var EdisonTicket = (function () {
 
   function setState(el, repo, issue, state, button) {
     if (button) button.disabled = true;
-    EdisonApi.updateIssue(repo, issue.number, { state: state }).then(function () {
+    return EdisonApi.updateIssue(repo, issue.number, { state: state }).then(function () {
       if (state === 'closed' && button) BriefMessage.show('Ticket closed', button, { durationMs: 2500 });
       return mount(el, repo, issue.number);
     }).catch(function (error) {
