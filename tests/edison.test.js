@@ -189,3 +189,28 @@ test('markdown escapes html and keeps images', function () {
   assert.match(html, /&lt;script&gt;/);
   assert.match(html, /<img alt="shot" src="https:\/\/example.com\/a.jpg" \/>/);
 });
+
+test('mergeChanged drops a just-closed ticket that search still lists as open', function () {
+  const url = 'https://api.github.com/repos/ZarleyLtd/App';
+  const stale = { number: 4, repository_url: url, state: 'open', updated_at: '2026-11-24T10:00:00Z' };
+  const other = { number: 5, repository_url: url, state: 'open', updated_at: '2026-11-24T09:00:00Z' };
+  const closed = Object.assign({}, stale, { state: 'closed', updated_at: '2026-11-24T10:05:00Z' });
+  const open = function (issue) { return issue.state === 'open'; };
+  assert.deepEqual(query.mergeChanged([stale, other], [closed], open), [other]);
+});
+
+test('mergeChanged replaces a ticket in place and adds one that now matches', function () {
+  const url = 'https://api.github.com/repos/ZarleyLtd/App';
+  const a = { number: 1, repository_url: url, labels: ['stage:working'], updated_at: '2026-11-24T10:00:00Z' };
+  const b = { number: 2, repository_url: url, labels: ['stage:ready'], updated_at: '2026-11-24T10:00:00Z' };
+  const moved = Object.assign({}, a, { labels: ['stage:review'], updated_at: '2026-11-24T10:02:00Z' });
+  const added = { number: 3, repository_url: url, labels: ['stage:inbox'], updated_at: '2026-11-24T10:03:00Z' };
+  assert.deepEqual(query.mergeChanged([a, b], [moved, added]), [added, moved, b]);
+});
+
+test('mergeChanged keeps the search copy when it is newer', function () {
+  const url = 'https://api.github.com/repos/ZarleyLtd/App';
+  const newer = { number: 1, repository_url: url, state: 'open', updated_at: '2026-11-24T10:10:00Z' };
+  const older = Object.assign({}, newer, { state: 'closed', updated_at: '2026-11-24T10:00:00Z' });
+  assert.deepEqual(query.mergeChanged([newer], [older], function () { return false; }), [newer]);
+});

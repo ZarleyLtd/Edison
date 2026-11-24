@@ -303,7 +303,35 @@
     return fresh.concat(rest);
   }
 
+  // Lays tickets this browser has just loaded over the search results, because
+  // GitHub search can lag behind a close or a label change. The newer copy of
+  // each ticket wins. A changed ticket that no longer matches the view is
+  // dropped, and one that now matches is added at the top.
+  function mergeChanged(items, changed, matches) {
+    var list = (items || []).slice();
+    (changed || []).forEach(function (fresh) {
+      if (!fresh || !fresh.repository_url) return;
+      var index = -1;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].number === fresh.number && list[i].repository_url === fresh.repository_url) {
+          index = i;
+          break;
+        }
+      }
+      if (index !== -1 && Date.parse(list[index].updated_at) > Date.parse(fresh.updated_at)) return;
+      var keep = !matches || matches(fresh);
+      if (index !== -1) {
+        if (keep) list[index] = fresh;
+        else list.splice(index, 1);
+      } else if (keep) {
+        list.unshift(fresh);
+      }
+    });
+    return list;
+  }
+
   return {
+    mergeChanged: mergeChanged,
     buildIssueQuery: buildIssueQuery,
     buildPrQuery: buildPrQuery,
     mentionsIssue: mentionsIssue,

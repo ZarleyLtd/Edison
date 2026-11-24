@@ -215,23 +215,29 @@ var EdisonList = (function () {
     showDetail(picked.repo, picked.number);
   }
 
-  function includeCreated(items, issue) {
-    if (!issue) return items;
+  // Whether an issue belongs in the current view (filters, Done, search text).
+  function matchesView(issue) {
     var repo = EdisonFormat.repoFromUrl(issue.repository_url);
     if (filters.app === 'new') {
-      if (!EdisonLabels.isNewApp(issue.labels)) return items;
+      if (!EdisonLabels.isNewApp(issue.labels)) return false;
     } else if (filters.app && filters.app !== repo) {
-      return items;
+      return false;
     }
-    if (filters.type && EdisonLabels.typeOf(issue.labels) !== filters.type) return items;
-    if (filters.priority && EdisonLabels.priorityOf(issue.labels) !== filters.priority) return items;
+    if (filters.type && EdisonLabels.typeOf(issue.labels) !== filters.type) return false;
+    if (filters.priority && EdisonLabels.priorityOf(issue.labels) !== filters.priority) return false;
     if (filters.done) {
-      if (issue.state !== 'closed') return items;
+      if (issue.state !== 'closed') return false;
     } else if (issue.state === 'closed') {
-      return items;
+      return false;
     }
     var text = String(queryText || '').trim().toLowerCase();
-    if (text && (issue.title + ' ' + (issue.body || '')).toLowerCase().indexOf(text) === -1) return items;
+    if (text && (issue.title + ' ' + (issue.body || '')).toLowerCase().indexOf(text) === -1) return false;
+    return true;
+  }
+
+  function includeCreated(items, issue) {
+    if (!issue || !matchesView(issue)) return items;
+    var repo = EdisonFormat.repoFromUrl(issue.repository_url);
     var present = items.some(function (item) {
       return item.number === issue.number && EdisonFormat.repoFromUrl(item.repository_url) === repo;
     });
@@ -239,17 +245,21 @@ var EdisonList = (function () {
     return items;
   }
 
-  function load(extraIssue) {
+  // quiet: keep the current rows on screen while the search runs.
+  function load(extraIssue, quiet) {
     var token = ++loadToken;
-    loadError = '';
     if (!EdisonAuth.getToken()) {
+      loadError = '';
       loading = false;
       issues = [];
       paintList();
       return Promise.resolve();
     }
-    loading = true;
-    paintList();
+    if (!quiet) {
+      loadError = '';
+      loading = true;
+      paintList();
+    }
     var query = EdisonQuery.buildIssueQuery({
       owner: EDISON_CONFIG.OWNER,
       edisonRepo: EDISON_CONFIG.REPO,
@@ -263,12 +273,13 @@ var EdisonList = (function () {
     return EdisonApi.searchIssues(query).then(function (result) {
       if (token !== loadToken) return;
       loading = false;
-      issues = includeCreated(result.items || [], extraIssue);
+      loadError = '';
+      issues = EdisonQuery.mergeChanged(includeCreated(result.items || [], extraIssue), EdisonChanges.recent(), matchesView);
       paintList();
     }).catch(function (error) {
       if (token !== loadToken) return;
       loading = false;
-      issues = [];
+      if (!quiet) issues = [];
       loadError = error.message;
       paintList();
     });
@@ -610,6 +621,7 @@ var EdisonList = (function () {
       else {
         history.pushState({}, '', 'index.html');
         openFromQuery();
+        refresh();
       }
       return;
     }
@@ -695,12 +707,31 @@ var EdisonList = (function () {
     }, 300);
   }
 
+  // Re-reads the list without blanking it, e.g. on returning from a ticket.
+  function refresh() {
+    if (!loading) load(null, true);
+  }
+
+  // A ticket was opened or changed: show its current state straight away.
+  function onTicketChanged(event) {
+    var issue = event.detail && event.detail.issue;
+    if (!issue || loading) return;
+    issues = EdisonQuery.mergeChanged(issues, [issue], matchesView);
+    paintList();
+  }
+
+  function onPopState() {
+    openFromQuery();
+    if (!ticketParams()) refresh();
+  }
+
   function init() {
     document.body.addEventListener('click', onClick);
     document.body.addEventListener('submit', onSubmit);
     document.body.addEventListener('change', onChange);
     document.addEventListener('keydown', onKey);
-    window.addEventListener('popstate', openFromQuery);
+    document.addEventListener('edison:ticket-changed', onTicketChanged);
+    window.addEventListener('popstate', onPopState);
     window.addEventListener('resize', applyChrome);
     document.getElementById('search').addEventListener('input', onSearchInput);
     applyChrome();
